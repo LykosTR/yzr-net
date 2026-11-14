@@ -1,0 +1,21 @@
+name: points
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish
+jobs:
+  points:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python data/points/fetch_points.py
+      - run: bash .github/scripts/publish.sh points data/points/out
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

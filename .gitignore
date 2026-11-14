@@ -1,0 +1,19 @@
+# Whitelist: ignore everything, then include selected paths
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/YZR.webp
+!/.github/
+!/data/
+
+node_modules/
+*.log
+__pycache__/
+
+# local-only (site source, not published here)
+templates/
+themes.xml
+
+# local-only backups (not published)
+.github/backup/
