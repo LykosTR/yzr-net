@@ -6,6 +6,8 @@
 
 [yzrnet.blogspot.com](https://yzrnet.blogspot.com/)
 
+<sub>v2.1.0</sub>
+
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
 
