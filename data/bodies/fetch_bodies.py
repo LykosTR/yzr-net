@@ -3,7 +3,8 @@
 Sources (public, no key):
   * NASA/JPL Horizons API  -> planets, dwarf planets and every natural satellite (ELEMENTS at "now", ecliptic J2000 / ICRF,
     planets + dwarfs about the Sun, satellites about their parent planet's centre).
-  * NASA/JPL SBDB Query API -> asteroids (all PHAs, all NEOs brighter than H 19 and every asteroid brighter than H 9.5).
+  * NASA/JPL SBDB Query API -> asteroids (all PHAs, all NEOs brighter than H 19 and every asteroid brighter than H 9.5, plus the curated
+    Ida, Gaspra, Mathilde and Steins).
 
 Output (data/bodies/out):
   bodies.json    {"at": ms, "jd": epoch (TDB), "frame": ..., "bodies": [...]}  one object per Horizons body:
@@ -24,6 +25,7 @@ J2000_JD = 2451545.0
 PLANETS = {199: "Mercury", 299: "Venus", 399: "Earth", 499: "Mars", 599: "Jupiter", 699: "Saturn", 799: "Uranus", 899: "Neptune"}
 DWARFS = {999: "Pluto", "1;": "Ceres", "136199;": "Eris", "136108;": "Haumea", "136472;": "Makemake", "225088;": "Gonggong",
           "50000;": "Quaoar", "90377;": "Sedna", "90482;": "Orcus"}
+CURATED_EXTRA = (20000243, 20000951, 20000253, 20002867)  # Ida, Gaspra, Mathilde, Steins: curated but fainter than H 9.5
 PARENT = {3: 399, 4: 499, 5: 599, 6: 699, 7: 799, 8: 899, 9: 999}  # leading digit of a satellite id -> parent planet id
 
 
@@ -107,7 +109,8 @@ def one(job):
 def asteroids():
     base = {"fields": "spkid,full_name,a,e,i,om,w,ma,n,epoch,H,diameter,pha,neo", "sb-kind": "a", "full-prec": "0"}
     seen, rows = set(), []
-    for cd, cls in (({"AND": ["H|RG|-5|9.5"]}, None), ({"AND": ["H|RG|-5|19"]}, "NEO"), (None, "PHA")):
+    curated = {"OR": ["spkid|EQ|%d" % s for s in CURATED_EXTRA]}
+    for cd, cls in (({"AND": ["H|RG|-5|9.5"]}, None), ({"AND": ["H|RG|-5|19"]}, "NEO"), (None, "PHA"), (curated, None)):
         q = dict(base)
         if cd:
             q["sb-cdata"] = json.dumps(cd, separators=(",", ":"))

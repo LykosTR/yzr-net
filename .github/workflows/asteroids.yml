@@ -1,0 +1,21 @@
+name: asteroids
+on:
+  schedule:
+    - cron: '20 3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish-catalog
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python data/asteroids/fetch_catalog.py
+      - run: bash .github/scripts/publish.sh catalog data/asteroids/out catalog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
