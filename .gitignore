@@ -17,3 +17,4 @@ themes.xml
 
 # local-only backups (not published)
 .github/backup/
+data/*/out/
