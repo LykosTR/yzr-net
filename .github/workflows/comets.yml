@@ -1,0 +1,21 @@
+name: comets
+on:
+  schedule:
+    - cron: '50 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish
+jobs:
+  comets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python data/comets/fetch_comets.py
+      - run: bash .github/scripts/publish.sh comets data/comets/out
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
