@@ -8,7 +8,7 @@ Sources (public, no key):
 Output (data/bodies/out):
   bodies.json    {"at": ms, "jd": epoch (TDB), "frame": ..., "bodies": [...]}  one object per Horizons body:
                  {"id", "name", "type", "parent", "a" km, "e", "i" deg, "om" deg, "w" deg, "ma" deg (mean anomaly AT jd),
-                  "n" deg/s (mean motion), "per" s}
+                  "n" deg/s (mean motion), "per" s, "rad" km (mean radius) and/or "vm" V(1,0) magnitude, only when JPL publishes them}
   asteroids.json {"at": ms, "fields": [...], "rows": [[...]]}  SBDB rows; "epoch" is the element epoch (JD TDB),
                  a in au, n in deg/day, ma in deg at epoch.
 Client propagation (two-body Kepler): M(t) = ma + n * (t - epoch); solve E, convert to position. Refetched every hour,
@@ -64,7 +64,7 @@ def moon_ids():
 
 def elements(cmd, center, jd):
     q = urllib.parse.urlencode({
-        "format": "json", "COMMAND": "'%s'" % cmd, "OBJ_DATA": "'NO'", "MAKE_EPHEM": "'YES'", "EPHEM_TYPE": "'ELEMENTS'",
+        "format": "json", "COMMAND": "'%s'" % cmd, "OBJ_DATA": "'YES'", "MAKE_EPHEM": "'YES'", "EPHEM_TYPE": "'ELEMENTS'",
         "CENTER": "'%s'" % center, "TLIST": "'%.6f'" % jd, "REF_PLANE": "'ECLIPTIC'", "REF_SYSTEM": "'ICRF'",
         "OUT_UNITS": "'KM-S'", "CSV_FORMAT": "'YES'"})
     txt = http(HZ + q)
@@ -74,6 +74,8 @@ def elements(cmd, center, jd):
     a, b = res.find("$$SOE"), res.find("$$EOE")
     if a < 0 or b < 0:
         return None
+    head = res[:a]
+    rm = (re.search(r"(?:Vol\.?\s*)?(?:Mean\s+)?Radius\s*\(km\)\s*=\s*([\d.]+)", head, re.I) or re.search(r"RAD=\s*([\d.]+)", head))
     f = [x.strip() for x in res[a + 5:b].strip().split(",")]
     # JDTDB, Calendar, EC, QR, IN, OM, W, Tp, N, MA, TA, A, AD, PR
     try:
@@ -82,7 +84,13 @@ def elements(cmd, center, jd):
         return None
     if not (0 <= v["e"] < 1 and v["a"] > 0):
         return None
-    return {k: float("%.10g" % x) for k, x in v.items()}
+    out = {k: float("%.10g" % x) for k, x in v.items()}
+    vm = re.search(r"V\(1,0\)\s*=\s*([+-]?[\d.]+)", head)
+    if vm:
+        out["vm"] = float(vm.group(1))  # absolute magnitude: the client estimates a radius from it
+    if rm and float(rm.group(1)) > 0:
+        out["rad"] = float(rm.group(1))  # km, when JPL publishes one
+    return out
 
 
 def one(job):
