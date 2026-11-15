@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.2.0-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.2.1-2E7D32)
 
 </div>
 
@@ -37,7 +37,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Gök cisimleri: gezegenler, cüce gezegenler, doğal uydular, asteroitler (yörünge elemanları), Ay (saatlik konum vektörleri) | NASA/JPL Horizons, NASA/JPL SBDB | saatte bir |
 | Kuyruklu yıldızlar: NASA kataloğundaki tüm kuyruklu yıldızlar (~4100; yörünge elemanları, çekirdek çapı, albedo, dönme süresi, parlaklık katsayıları) | NASA/JPL SBDB | 6 saatte bir |
 | Asteroit kataloğu: numaralı asteroitlerin tümü (ad dizini + yörünge elemanları, **`catalog`** dalı) | NASA/JPL SBDB | günde bir (03:20 UTC) |
-| Yıldız kataloğu: Güneş'e ~3 kpc içindeki en parlak 1 milyon yıldız (konum, paralaks, parlaklık, renk, sıcaklık, yarıçap, ışıma gücü; **`catalog`** dalı, `stars/`) | ESA Gaia DR3 | haftada bir (Pazar 03:40 UTC) |
+| Yıldız kataloğu: Güneş'e ~3 kpc içindeki en parlak 1 milyon yıldız (konum, paralaks, parlaklık, renk, sıcaklık, yarıçap, ışıma gücü, adlar ve katalog numaraları; **`catalog`** dalı, `stars/`) | ESA Gaia DR3, HYG v4.1 | haftada bir (Pazar 03:40 UTC) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
 ## 📡 Veri kaynakları
@@ -53,7 +53,7 @@ Veri önce `data` dalından okunur; dosya yoksa ya da eskiyse ilgili servise do�
 | Rüzgâr | NOAA GFS |
 | Okyanus akıntıları | Copernicus Marine Service |
 | Gök cisimleri ve kuyruklu yıldızlar | NASA/JPL Horizons, SBDB |
-| Yıldızlar | ESA Gaia DR3 |
+| Yıldızlar | ESA Gaia DR3 (AIP Gaia aynası), HYG v4.1 (CC BY-SA 4.0: adlar, Hipparcos parlak yıldızları) |
 | Hava durumu | Open-Meteo |
 
 ## 📜 Veri hakları
