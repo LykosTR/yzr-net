@@ -1,0 +1,21 @@
+name: aurora
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish
+jobs:
+  aurora:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python data/aurora/fetch_aurora.py
+      - run: bash .github/scripts/publish.sh aurora data/aurora/out
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
