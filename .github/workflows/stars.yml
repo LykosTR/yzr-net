@@ -1,0 +1,21 @@
+name: stars
+on:
+  schedule:
+    - cron: '40 3 * * 0'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish-catalog
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python data/stars/fetch_stars.py
+      - run: bash .github/scripts/publish.sh stars data/stars/out catalog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
