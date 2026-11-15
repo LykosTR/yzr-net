@@ -12,6 +12,8 @@ Output (data/bodies/out):
                   "n" deg/s (mean motion), "per" s, "rad" km (mean radius) and/or "vm" V(1,0) magnitude, only when JPL publishes them}
   asteroids.json {"at": ms, "fields": [...], "rows": [[...]]}  SBDB rows; "epoch" is the element epoch (JD TDB),
                  a in au, n in deg/day, ma in deg at epoch.
+  bodies.json also carries "moon": {"jd0" TDB, "step" days, "v": [[x, y, z km, vx, vy, vz km/s], ...]}: Horizons geocentric
+                 Moon vectors, hourly over +-2 days (the client interpolates them; null when Horizons failed).
 Client propagation (two-body Kepler): M(t) = ma + n * (t - epoch); solve E, convert to position. Refetched every hour,
 so the error never grows past one refresh interval."""
 import concurrent.futures as cf, datetime as dt, json, math, os, re, sys, time, urllib.parse, urllib.request
@@ -95,6 +97,33 @@ def elements(cmd, center, jd):
     return out
 
 
+def moon_vectors(jd, half=2.0):
+    """Geocentric Moon state vectors (ecliptic J2000 / ICRF, km and km/s), hourly from jd-half to jd+half (TDB)."""
+    q = urllib.parse.urlencode({
+        "format": "json", "COMMAND": "'301'", "OBJ_DATA": "'NO'", "MAKE_EPHEM": "'YES'", "EPHEM_TYPE": "'VECTORS'",
+        "CENTER": "'500@399'", "START_TIME": "'JD %.6f'" % (jd - half), "STOP_TIME": "'JD %.6f'" % (jd + half), "STEP_SIZE": "'1 h'",
+        "REF_PLANE": "'ECLIPTIC'", "REF_SYSTEM": "'ICRF'", "OUT_UNITS": "'KM-S'", "VEC_TABLE": "'2'", "CSV_FORMAT": "'YES'"})
+    txt = http(HZ + q)
+    if not txt:
+        return None
+    res = json.loads(txt).get("result", "")
+    a, b = res.find("$$SOE"), res.find("$$EOE")
+    if a < 0 or b < 0:
+        return None
+    rows = []
+    for line in res[a + 5:b].strip().splitlines():
+        f = [x.strip() for x in line.split(",")]
+        try:
+            rows.append([round(float(v), 4) for v in f[2:5]] + [round(float(v), 7) for v in f[5:8]])
+            if len(rows) == 1:
+                jd0 = float(f[0])
+        except (ValueError, IndexError):
+            return None
+    if len(rows) < 90 or not all(350000 < math.sqrt(r[0] ** 2 + r[1] ** 2 + r[2] ** 2) < 410000 for r in rows):
+        return None
+    return {"jd0": round(jd0, 6), "step": 1 / 24.0, "frame": "geocentric ecliptic J2000; km, km/s; TDB", "v": rows}
+
+
 def one(job):
     (bid, name, typ, parent), center, jd = job
     el = elements(bid, center, jd)
@@ -107,7 +136,7 @@ def one(job):
 
 
 def asteroids():
-    base = {"fields": "spkid,full_name,a,e,i,om,w,ma,n,epoch,H,diameter,pha,neo", "sb-kind": "a", "full-prec": "0"}
+    base = {"fields": "spkid,full_name,a,e,i,om,w,ma,n,epoch,H,diameter,pha,neo", "sb-kind": "a", "full-prec": "1"}
     seen, rows = set(), []
     curated = {"OR": ["spkid|EQ|%d" % s for s in CURATED_EXTRA]}
     for cd, cls in (({"AND": ["H|RG|-5|9.5"]}, None), ({"AND": ["H|RG|-5|19"]}, "NEO"), (None, "PHA"), (curated, None)):
@@ -131,8 +160,8 @@ def asteroids():
     for r in rows:
         spk, name = r[0], " ".join(str(r[1]).split())
         num = re.match(r"(\d+) ", name)
-        out.append([int(spk), name, round(float(r[2]), 6), round(float(r[3]), 6), round(float(r[4]), 4), round(float(r[5]), 4),
-                    round(float(r[6]), 4), round(float(r[7]), 4), round(float(r[8]), 6), float(r[9]),
+        out.append([int(spk), name, float("%.9g" % float(r[2])), float("%.9g" % float(r[3])), round(float(r[4]), 6),
+                    round(float(r[5]), 6), round(float(r[6]), 6), round(float(r[7]), 6), float("%.9g" % float(r[8])), float(r[9]),
                     None if r[10] in (None, "") else round(float(r[10]), 2), None if r[11] in (None, "") else round(float(r[11]), 3),
                     1 if r[12] == "Y" else 0, 1 if r[13] == "Y" else 0])
     return out
@@ -168,11 +197,13 @@ def main():
     ast = asteroids()
     if len(ast) < 3000:
         sys.exit("only %d asteroids, refusing to publish" % len(ast))
+    moon = moon_vectors(jd)
+    print("moon vectors", len(moon["v"]) if moon else "missing")
     os.makedirs(OUT, exist_ok=True)
     now = int(time.time() * 1000)
     with open(os.path.join(OUT, "bodies.json"), "w") as f:
         json.dump({"at": now, "jd": round(jd, 6), "frame": "ecliptic J2000 (ICRF); km, deg, s; planets/dwarfs about the Sun, moons about parent",
-                   "bodies": res}, f, separators=(",", ":"))
+                   "bodies": res, "moon": moon}, f, separators=(",", ":"))
     with open(os.path.join(OUT, "asteroids.json"), "w") as f:
         json.dump({"at": now, "frame": "heliocentric ecliptic J2000; a au, angles deg, n deg/day, epoch JD TDB, diameter km",
                    "fields": ["spk", "name", "a", "e", "i", "om", "w", "ma", "n", "epoch", "H", "diameter", "pha", "neo"], "rows": ast},
