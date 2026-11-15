@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.1.6-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.1.7-2E7D32)
 
 </div>
 
@@ -36,6 +36,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Okyanus akıntıları | Copernicus Marine Service | saatte bir |
 | Gök cisimleri: gezegenler, cüce gezegenler, doğal uydular, asteroitler (yörünge elemanları), Ay (saatlik konum vektörleri) | NASA/JPL Horizons, NASA/JPL SBDB | saatte bir |
 | Asteroit kataloğu: numaralı asteroitlerin tümü (ad dizini + yörünge elemanları, **`catalog`** dalı) | NASA/JPL SBDB | günde bir (03:20 UTC) |
+| Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
 ## 📡 Veri kaynakları
 
