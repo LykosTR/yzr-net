@@ -1,14 +1,14 @@
 """Fetch comet orbits from NASA/JPL SBDB and write them for the browser.
 
 Source (public, no key): NASA/JPL SBDB Query API, every comet (sb-kind=c), full precision.
-Kept: comets within 15 au of the Sun right now (two-body estimate from the perihelion elements)
-plus a short list of well-known comets wherever they are.
+Kept: EVERY comet SBDB has an orbit for (~4100: C/, P/, D/ and fragments), wherever it is now.
 
 Output (data/comets/out/comets.json):
   {"at": ms, "jd": JD (TDB) of the fetch, "fields": [...], "rows": [[...]]}
   fields: spk, name, pdes, prefix, e, q (au), i, om, w (deg, ecliptic J2000), tp (JD TDB of perihelion),
           epoch (JD TDB), M1, K1 (total-magnitude law m = M1 + 5 log D + K1 log r), diameter (km, nucleus, or null),
-          per (years, or null)
+          per (years, or null), albedo (nucleus geometric albedo, or null), rot (rotation period h, or null),
+          M2, K2 (nuclear-magnitude law, or null; M2 gives the nucleus size when no diameter is published)
 Client propagation: two-body from (q, e, tp): ellipse, parabola or hyperbola."""
 import datetime as dt, json, math, os, time, urllib.parse, urllib.request
 
@@ -16,10 +16,8 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 SBDB = "https://ssd-api.jpl.nasa.gov/sbdb_query.api?"
 UA = {"User-Agent": "yzr-net-comets/1.0"}
 K = 0.01720209895  # Gaussian gravitational constant (au^1.5 / day)
-FIELDS = ["spkid", "full_name", "pdes", "prefix", "e", "q", "i", "om", "w", "tp", "epoch", "M1", "K1", "diameter", "per_y"]
-FAMOUS = {"1P", "2P", "9P", "19P", "21P", "29P", "46P", "67P", "81P", "103P", "109P", "12P", "13P", "55P",
-          "1995 O1", "1996 B2", "2020 F3", "2023 A3", "2022 E3", "2006 P1"}
-R_MAX = 15.0
+FIELDS = ["spkid", "full_name", "pdes", "prefix", "e", "q", "i", "om", "w", "tp", "epoch", "M1", "K1", "diameter", "per_y", "albedo", "rot_per", "M2", "K2"]
+MIN_ROWS = 3500
 
 
 def http(url, tries=5, timeout=120):
@@ -83,20 +81,22 @@ def main():
         e, qq, inc, om, w, tp, ep = (num(x) for x in r[4:11])
         if None in (e, qq, inc, om, w, tp) or qq <= 0 or e < 0:
             continue
-        if prefix in ("D", "X"):
-            continue  # defunct / no usable orbit
+        if prefix == "X":
+            continue  # no usable orbit
         try:
-            rnow = helio_r(qq, e, tp, jd)
+            helio_r(qq, e, tp, jd)
         except (OverflowError, ValueError, ZeroDivisionError):
             continue
-        if not (rnow < R_MAX or pdes in FAMOUS):
-            continue
         rows.append([int(spk), name, pdes, prefix, round(e, 10), round(qq, 10), round(inc, 8), round(om, 8), round(w, 8),
-                     round(tp, 8), ep, num(r[11]), num(r[12]), num(r[13]), num(r[14])])
+                     round(tp, 8), ep, num(r[11]), num(r[12]), num(r[13]), num(r[14]),
+                     num(r[15]), num(r[16]), num(r[17]), num(r[18])])
+    if len(rows) < MIN_ROWS:
+        raise SystemExit("only %d comets, refusing to publish" % len(rows))
     rows.sort(key=lambda x: x[5])
     os.makedirs(OUT, exist_ok=True)
     out = {"at": int(time.time() * 1000), "jd": round(jd, 6),
-           "fields": ["spk", "name", "pdes", "prefix", "e", "q", "i", "om", "w", "tp", "epoch", "M1", "K1", "diameter", "per"],
+           "fields": ["spk", "name", "pdes", "prefix", "e", "q", "i", "om", "w", "tp", "epoch", "M1", "K1", "diameter", "per",
+                      "albedo", "rot", "M2", "K2"],
            "rows": rows}
     with open(os.path.join(OUT, "comets.json"), "w", encoding="utf-8") as f:
         json.dump(out, f, separators=(",", ":"))

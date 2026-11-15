@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.1.8-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.1.9-2E7D32)
 
 </div>
 
@@ -35,7 +35,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Kutup ışığı tahmini | NOAA SWPC OVATION | 10 dakikada bir |
 | Okyanus akıntıları | Copernicus Marine Service | saatte bir |
 | Gök cisimleri: gezegenler, cüce gezegenler, doğal uydular, asteroitler (yörünge elemanları), Ay (saatlik konum vektörleri) | NASA/JPL Horizons, NASA/JPL SBDB | saatte bir |
-| Kuyruklu yıldızlar: Güneş'e 15 AU'dan yakın olanlar ve bilinen kuyruklu yıldızlar (yörünge elemanları, çekirdek çapı, parlaklık katsayıları) | NASA/JPL SBDB | 6 saatte bir |
+| Kuyruklu yıldızlar: NASA kataloğundaki tüm kuyruklu yıldızlar (~4100; yörünge elemanları, çekirdek çapı, albedo, dönme süresi, parlaklık katsayıları) | NASA/JPL SBDB | 6 saatte bir |
 | Asteroit kataloğu: numaralı asteroitlerin tümü (ad dizini + yörünge elemanları, **`catalog`** dalı) | NASA/JPL SBDB | günde bir (03:20 UTC) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
