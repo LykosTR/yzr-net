@@ -38,6 +38,8 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Kuyruklu yıldızlar: NASA kataloğundaki tüm kuyruklu yıldızlar (~4100; yörünge elemanları, çekirdek çapı, albedo, dönme süresi, parlaklık katsayıları) | NASA/JPL SBDB | 6 saatte bir |
 | Asteroit kataloğu: numaralı asteroitlerin tümü (ad dizini + yörünge elemanları, **`catalog`** dalı) | NASA/JPL SBDB | günde bir (03:20 UTC) |
 | Yıldız kataloğu: Güneş'e ~3 kpc içindeki en parlak 1 milyon yıldız (konum, paralaks, parlaklık, renk, sıcaklık, yarıçap, ışıma gücü, adlar ve katalog numaraları; **`catalog`** dalı, `stars/`) | ESA Gaia DR3, HYG v4.1 | haftada bir (Pazar 03:40 UTC) |
+| Galaksi kataloğu: HyperLEDA'daki B parlaklığı < 15 olan ~50 bin galaksi (3B konum, çap, eksen oranı, açı, morfoloji, bar, B-V, PGC; Messier ve ortak adlar; **`catalog`** dalı, `galaxies/`) | HyperLEDA (Lyon Gözlemevi) | ayda bir (ayın 1'i 04:10 UTC) |
+| Samanyolu panoraması: yıldızları ayıklanmış, arka plan ışığı çıkarılmış 360° galaktik koordinat görüntüsü (4096×2048 ve 2048×1024 WebP; **`catalog`** dalı, `milkyway/`) | ESO / S. Brunier (eso0932a), CC BY 4.0 | ayda bir (ayın 1'i 04:10 UTC) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
 ## 📡 Veri kaynakları
@@ -54,6 +56,8 @@ Veri önce `data` dalından okunur; dosya yoksa ya da eskiyse ilgili servise do�
 | Okyanus akıntıları | Copernicus Marine Service |
 | Gök cisimleri ve kuyruklu yıldızlar | NASA/JPL Horizons, SBDB |
 | Yıldızlar | ESA Gaia DR3 (AIP Gaia aynası), HYG v4.1 (CC BY-SA 4.0: adlar, Hipparcos parlak yıldızları) |
+| Galaksiler | HyperLEDA (Lyon Gözlemevi) |
+| Samanyolu panoraması | ESO/S. Brunier (CC BY 4.0) |
 | Hava durumu | Open-Meteo |
 
 ## 📜 Veri hakları

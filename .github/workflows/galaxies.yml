@@ -1,0 +1,26 @@
+name: galaxies
+on:
+  schedule:
+    - cron: '10 4 1 * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish-catalog
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python data/galaxies/fetch_galaxies.py
+      - run: bash .github/scripts/publish.sh galaxies data/galaxies/out catalog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: pip install pillow numpy
+      - run: python data/milkyway/fetch_mw.py
+      - run: bash .github/scripts/publish.sh milkyway data/milkyway/out catalog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
