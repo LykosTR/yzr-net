@@ -14,8 +14,12 @@ Output (data/stars/out)
   st/<k>.json   shard k = ranks k*1000 .. k*1000+999: {"at": ms, "first": k*1000, "fields": [...], "rows": [...]}
                 row = [gaia id (0 = Hipparcos-only), ra deg, dec deg (ICRS), parallax mas, mag (G; V for src 1),
                        BP-RP, Teff K, radius Rsun, logg, luminosity Lsun, spectral type, src (0 Gaia, 1 Hipparcos/HYG)]
-Missing Teff / radius / luminosity are left null; the client derives them from colour and absolute magnitude."""
-import csv, gzip, io, json, math, os, sys, time, urllib.parse, urllib.request
+Missing Teff / radius / luminosity are left null; the client derives them from colour and absolute magnitude.
+  sky/0.bin, 1.bin, 2.bin  point cloud of every star, rank order (ranks 0..49999, 50000..249999, 250000..end), 16-byte
+                little-endian records, record i == rank i: float32 x, y, z (parsec, ICRS cartesian from ra/dec/parallax),
+                int16 absolute magnitude*100 (clamped +-3000; 32767 = unknown: null mag or parallax <= 0, then x=y=z=0 if parallax unusable), uint16 Teff K (row Teff, else from BP-RP, else 5772)
+  sky/meta.json {"at", "n", "tiers": cumulative ends [50000, 250000, n], "rec": 16, "fields"}"""
+import csv, gzip, io, json, math, os, struct, sys, time, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
@@ -178,6 +182,63 @@ def build(stars, at=0):
     return "\n".join(lines), shards
 
 
+# ---------------------------------------------------------------- sky (binary point cloud)
+SKY_TIERS = [50000, 250000]           # rank bounds of sky/0.bin and sky/1.bin; sky/2.bin holds the rest
+SKY_REC = 16
+SKY_UNKNOWN = 32767
+
+
+def teff_bprp(c):
+    """Python port of the client's srStarTeffBpRp (Gaia BP-RP -> Teff K). Pure."""
+    if c is None or not math.isfinite(c):
+        return None
+    c = max(-0.6, min(5.0, c))
+    if c < 0.2:
+        tc = [-0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.2]
+        tt = [40000, 40000, 30000, 22000, 16000, 12500, 9700, 8495]
+        for i in range(1, len(tc)):
+            if c <= tc[i]:
+                f = (c - tc[i - 1]) / (tc[i] - tc[i - 1])
+                return math.exp(math.log(tt[i - 1]) + f * (math.log(tt[i]) - math.log(tt[i - 1])))
+    if c > 2.0:
+        return max(2300.0, 3550.0 - 420.0 * (c - 2.0))
+    th = 0.4929 + 0.5092 * c - 0.0353 * c * c
+    return 5040.0 / th
+
+
+def sky_record(row):
+    """One 16-byte record: f32 x,y,z (pc, ICRS), i16 absmag*100 (32767 unknown), u16 Teff K. Pure."""
+    ra, dec, plx, mag, bprp, teff = row[1], row[2], row[3], row[4], row[5], row[6]
+    t = teff if teff else (teff_bprp(bprp) or 5772.0)
+    t = int(round(max(1500.0, min(65000.0, t))))
+    if plx is None or ra is None or dec is None or plx <= 0:
+        return struct.pack("<fffhH", 0.0, 0.0, 0.0, SKY_UNKNOWN, t)
+    d = 1000.0 / plx
+    ra, dec = math.radians(ra), math.radians(dec)
+    cd = d * math.cos(dec)
+    if mag is None:
+        am = SKY_UNKNOWN
+    else:
+        am = int(round(max(-30.0, min(30.0, mag - 5.0 * math.log10(d / 10.0))) * 100))
+    return struct.pack("<fffhH", cd * math.cos(ra), cd * math.sin(ra), d * math.sin(dec), am, t)
+
+
+def build_sky(stars, at=0):
+    """-> (tiers, meta): tiers = list of bytes (rank slices SKY_TIERS), one record per star in rank order. Pure."""
+    n = len(stars)
+    bounds, prev = [], 0
+    for b in list(SKY_TIERS) + [n]:
+        prev = max(prev, min(b, n))
+        bounds.append(prev)
+    tiers, lo = [], 0
+    for hi in bounds:
+        tiers.append(b"".join(sky_record(s[2]) for s in stars[lo:hi]))
+        lo = hi
+    meta = {"at": at, "n": n, "tiers": bounds, "rec": SKY_REC,
+            "fields": "f32 x,y,z pc ICRS; i16 absmag*100 (32767 unknown); u16 teff K"}
+    return tiers, meta
+
+
 # ---------------------------------------------------------------- network
 CHUNK_LEVEL = 2                       # HEALPix level of the sky chunks: 12 * 4**2 = 192 queries
 MAX_SPLIT = 4                         # a chunk the server cancels (statement timeout) is split 4 ways, down to level 6
@@ -290,6 +351,13 @@ def main():
     for k, sh in shards.items():
         with open(os.path.join(OUT, "st", "%d.json" % k), "w", encoding="utf-8") as f:
             json.dump(sh, f, separators=(",", ":"), ensure_ascii=False)
+    tiers, meta = build_sky(stars, int(time.time() * 1000))
+    os.makedirs(os.path.join(OUT, "sky"), exist_ok=True)
+    for k, b in enumerate(tiers):
+        with open(os.path.join(OUT, "sky", "%d.bin" % k), "wb") as f:
+            f.write(b)
+    with open(os.path.join(OUT, "sky", "meta.json"), "w", encoding="utf-8") as f:
+        json.dump(meta, f, separators=(",", ":"))
     print("ok stars=%d shards=%d index=%d bytes in %.0fs" % (len(stars), len(shards), os.path.getsize(os.path.join(OUT, "index.txt.gz")), time.time() - t0))
 
 
