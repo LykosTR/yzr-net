@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.2.4-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.2.5-2E7D32)
 
 </div>
 
@@ -40,6 +40,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Yıldız kataloğu: Güneş'e ~3 kpc içindeki en parlak 1 milyon yıldız (konum, paralaks, parlaklık, renk, sıcaklık, yarıçap, ışıma gücü, adlar ve katalog numaraları; **`catalog`** dalı, `stars/`) | ESA Gaia DR3, HYG v4.1 | haftada bir (Pazar 03:40 UTC) |
 | Galaksi kataloğu: HyperLEDA'daki B parlaklığı < 15 olan ~50 bin galaksi (3B konum, çap, eksen oranı, açı, morfoloji, bar, B-V, PGC; Messier ve ortak adlar; **`catalog`** dalı, `galaxies/`) | HyperLEDA (Lyon Gözlemevi) | ayda bir (ayın 1'i 04:10 UTC) |
 | Samanyolu panoraması: yıldızları ayıklanmış, arka plan ışığı çıkarılmış 360° galaktik koordinat görüntüsü (4096×2048 ve 2048×1024 WebP; **`catalog`** dalı, `milkyway/`) | ESO / S. Brunier (eso0932a), CC BY 4.0 | ayda bir (ayın 1'i 04:10 UTC) |
+| Ay yüzey haritaları: renk (LROC WAC) ve gerçek ölçekli kabartmadan (LOLA 64 piksel/derece) hesaplanmış normal haritası (8K/4K/2K WebP, `moon/`) | NASA SVS (CGI Moon Kit), LRO LROC, LRO LOLA | elle (`moon` iş akışı) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
 ## 📡 Veri kaynakları
@@ -58,6 +59,7 @@ Veri önce `data` dalından okunur; dosya yoksa ya da eskiyse ilgili servise do�
 | Yıldızlar | ESA Gaia DR3 (AIP Gaia aynası), HYG v4.1 (CC BY-SA 4.0: adlar, Hipparcos parlak yıldızları) |
 | Galaksiler | HyperLEDA (Lyon Gözlemevi) |
 | Samanyolu panoraması | ESO/S. Brunier (CC BY 4.0) |
+| Ay yüzeyi | NASA's Scientific Visualization Studio, LRO LROC (NASA/GSFC/ASU), LRO LOLA (NASA/GSFC) |
 | Hava durumu | Open-Meteo |
 
 ## 📜 Veri hakları
