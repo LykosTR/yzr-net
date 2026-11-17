@@ -2,8 +2,8 @@
 """Mars surface maps for Space Radar (USGS Astrogeology, public domain):
   colour : Mars Viking Colorized Global Mosaic 925 m (MDIM 2.1 colour, 23059x11530)
   relief : Mars MGS MOLA DEM Global Mosaic 463 m (int16 metres above R = 3396.19 km)
-The Viking colour is graded to the site's previous Mars look (per-channel mean / std of the band |lat| < 55 deg, measured
-from the previous map: REF_MEAN / REF_STD) -- the albedo pattern, caps and detail are Viking's own.
+The Viking colour is graded to the site's previous Mars look (per-channel distribution of the band |lat| < 55 deg, measured
+from the previous map: REF_Q, CDF match) -- the albedo pattern, caps and detail are Viking's own.
 Outputs (out/): mars_{color,normal}_{2,4,8}k.webp + meta.json -- equirectangular, lon 0 at the centre, north up;
 normal map tangent space x = east, y = north, z = up (OpenGL), true scale.
 Needs: pip install numpy pillow opencv-python.   Usage: build_mars.py [raw_dir]"""
@@ -19,9 +19,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'out')
 R_KM = 3396.19
 SIZES = {8: (8192, 4096), 4: (4096, 2048), 2: (2048, 1024)}
-REF_MEAN = np.array([174.9, 87.2, 59.8], np.float32)
-REF_STD = np.array([43.8, 18.9, 10.0], np.float32)
-AO = 0.35                                    # strength of the relief occlusion term (see main)
+# previous site map, band |lat| < 55 deg: per-channel quantiles (3.125 % steps, 1st..31st) -- the Viking colour is
+# CDF-matched to these, so the overall look stays the old one while albedo, caps and detail are Viking's
+REF_Q = np.array([
+    [83, 96, 107, 117, 126, 134, 141, 147, 152, 156, 161, 165, 169, 173, 177, 181, 185, 189, 193, 197, 201, 204, 208, 211, 214, 217, 220, 223, 226, 231, 239],
+    [52, 57, 61, 65, 68, 71, 73, 75, 77, 79, 80, 82, 83, 84, 86, 87, 88, 90, 91, 93, 94, 96, 97, 99, 101, 103, 105, 108, 111, 117, 124],
+    [45, 47, 49, 50, 51, 52, 53, 53, 54, 54, 55, 56, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 64, 65, 66, 67, 69, 70, 73, 76, 82]], np.float32)
+AO = 0.22                                   # strength of the relief occlusion term (see main)
 
 
 def src(raw, name):
@@ -66,8 +70,15 @@ def main():
     assert c is not None and c.ndim == 3, 'colour TIFF unreadable'
     c = cv2.resize(c[:, :, 2::-1], (W, H), interpolation=cv2.INTER_AREA).astype(np.float32)   # BGR -> RGB
     band = c[int(H * 35 / 180):int(H * 145 / 180)].reshape(-1, 3)
-    m, s = band.mean(0), band.std(0)
-    g = (c - m) / s * REF_STD + REF_MEAN
+    pct = np.linspace(100 / 32, 3100 / 32, 31)
+    g = np.empty_like(c)
+    for i in range(3):   # CDF match, linear extrapolation beyond the 1st / 31st quantile
+        q = np.percentile(band[:, i], pct)
+        g[..., i] = np.interp(c[..., i], q, REF_Q[i])
+        lo = c[..., i] < q[0]; hi = c[..., i] > q[-1]
+        g[..., i][lo] = REF_Q[i][0] + (c[..., i][lo] - q[0]) * (REF_Q[i][1] - REF_Q[i][0]) / max(q[1] - q[0], 1e-3)
+        g[..., i][hi] = REF_Q[i][-1] + (c[..., i][hi] - q[-1]) * (REF_Q[i][-1] - REF_Q[i][-2]) / max(q[-1] - q[-2], 1e-3)
+    g = g * 0.92 + np.array([0.0, -3.0, 2.0], np.float32)   # rendered next to the old map it read brighter / more orange: a touch darker, less yellow
     # ice caps (bright, unsaturated in Viking) keep their own near-white instead of the red grade
     mx, mn = c.max(axis=2), c.min(axis=2)
     sat, lum = 1 - mn / np.maximum(mx, 1), c.mean(axis=2)
@@ -82,7 +93,7 @@ def main():
     del d
     # relief occlusion: canyons and crater floors sit darker, rims and ridges lighter (light-independent, like ambient
     # occlusion) -- keeps Valles Marineris & co readable at full phase, where the normal map has nothing to shade
-    hp = h - cv2.GaussianBlur(h, (0, 0), 6)
+    hp = h - cv2.GaussianBlur(h, (0, 0), 10)
     ao = np.clip(1 + AO * np.tanh(hp / (3 * float(hp.std()))), 0.55, 1.25)[..., None]
     c8 = np.clip(np.rint(c8.astype(np.float32) * ao), 0, 255).astype(np.uint8)
     del hp, ao
@@ -94,7 +105,7 @@ def main():
     meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': R_KM,
             'projection': 'equirectangular, lon 0 at centre, north up',
             'normal': 'tangent space x=east y=north z=up (OpenGL), true scale from MOLA 463 m',
-            'colour': 'Viking colorized mosaic graded to mean %s / std %s (|lat| < 55)' % (REF_MEAN.tolist(), REF_STD.tolist()),
+            'colour': 'Viking colorized mosaic, per-channel CDF-matched to the previous site map (|lat| < 55); ice caps neutral; relief occlusion %g' % AO,
             'files': sorted(f for f in os.listdir(OUT) if f.endswith('.webp')),
             'source': 'USGS Astrogeology: Mars Viking Colorized Global Mosaic 925m, Mars MGS MOLA DEM Global Mosaic 463m',
             'credit': 'NASA/JPL (Viking), NASA/GSFC MOLA Science Team (MGS MOLA), USGS Astrogeology'}
