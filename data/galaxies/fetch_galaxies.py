@@ -25,6 +25,7 @@ Output (data/galaxies/out)
                uint8   bve       (B-V + 0.5) * 100 clamped 0..250; 255 when unknown (client defaults by T)
                uint32  pgc       PGC number (0 unknown)
   names.json [[index, "display name", "alias|alias|..."], ...] common-named galaxies, Messier objects, and all btc < 10
+  search.json ["NGC 4565", "UGC 7772", ...] one HyperLEDA name per record, aligned with the record index (display formatted; client search)
   meta.json  {"at": ISO time, "n", "fmt", "rec", "limit", "source", "h0"}
 """
 import csv, io, json, math, os, re, struct, sys, time, urllib.request
@@ -157,7 +158,15 @@ def display(name):
     m = re.match(r"^(NGC|IC|UGC|PGC|MCG|CGCG)(\d+)", name)
     if m and name == m.group(0):
         return "%s %d" % (m.group(1), int(m.group(2)))
+    m = re.match(r"^ESO(\d+)-(\d+)$", name)
+    if m:
+        return "ESO %d-%d" % (int(m.group(1)), int(m.group(2)))
     return name
+
+
+def search_name(g):
+    n = display(g["name"].replace("_", " ")).strip()
+    return n if n else ("PGC %d" % g["pgc"] if g["pgc"] else "")
 
 
 def process(rows):
@@ -228,6 +237,8 @@ def main():
             names.append([i, display(g["name"]), "|".join(filter(None, [display(g["name"]), g["name"], "PGC %d" % g["pgc"] if g["pgc"] else ""]))])
     with open(os.path.join(OUT, "names.json"), "w", encoding="utf-8") as f:
         json.dump(names, f, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(OUT, "search.json"), "w", encoding="utf-8") as f:
+        json.dump([search_name(g) for g in gal], f, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(OUT, "meta.json"), "w") as f:
         json.dump({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "n": len(gal), "fmt": FMT, "rec": REC, "limit": LIMIT,
                    "source": "HyperLEDA meandata (btc<%g)" % LIMIT, "h0": H0}, f)
