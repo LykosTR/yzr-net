@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.2.6-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.2.7-2E7D32)
 
 </div>
 
@@ -41,6 +41,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Galaksi kataloğu: HyperLEDA'daki B parlaklığı < 15 olan ~50 bin galaksi (3B konum, çap, eksen oranı, açı, morfoloji, bar, B-V, PGC; Messier ve ortak adlar; **`catalog`** dalı, `galaxies/`) | HyperLEDA (Lyon Gözlemevi) | ayda bir (ayın 1'i 04:10 UTC) |
 | Samanyolu panoraması: yıldızları ayıklanmış, arka plan ışığı çıkarılmış 360° galaktik koordinat görüntüsü (4096×2048 ve 2048×1024 WebP; **`catalog`** dalı, `milkyway/`) | ESO / S. Brunier (eso0932a), CC BY 4.0 | ayda bir (ayın 1'i 04:10 UTC) |
 | Ay yüzey haritaları: renk (LROC WAC) ve gerçek ölçekli kabartmadan (LOLA 64 piksel/derece) hesaplanmış normal haritası (8K/4K/2K WebP, `moon/`) | NASA SVS (CGI Moon Kit), LRO LROC, LRO LOLA | elle (`moon` iş akışı) |
+| Merkür yüzey haritaları: renk (MDIS MD3 mozaiği, doğal gri tona çekilmiş) ve gerçek ölçekli kabartmadan (MESSENGER 665 m DEM) hesaplanmış normal haritası (8K/4K/2K WebP, `mercury/`) | USGS Astrogeology, NASA/JHUAPL/CIW (MESSENGER) | elle (`mercury` iş akışı) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
 ## 📡 Veri kaynakları
@@ -60,6 +61,7 @@ Veri önce `data` dalından okunur; dosya yoksa ya da eskiyse ilgili servise do�
 | Galaksiler | HyperLEDA (Lyon Gözlemevi) |
 | Samanyolu panoraması | ESO/S. Brunier (CC BY 4.0) |
 | Ay yüzeyi | NASA's Scientific Visualization Studio, LRO LROC (NASA/GSFC/ASU), LRO LOLA (NASA/GSFC) |
+| Merkür yüzeyi | NASA/JHUAPL/Carnegie Institution of Washington (MESSENGER MDIS), USGS Astrogeology |
 | Hava durumu | Open-Meteo |
 
 ## 📜 Veri hakları
