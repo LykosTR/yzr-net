@@ -22,12 +22,35 @@ R_KM = 1737.4
 SIZES = {8: (8192, 4096), 4: (4096, 2048), 2: (2048, 1024)}
 
 
+# svs.gsfc.nasa.gov omits its Let's Encrypt intermediate (YR2) from the TLS handshake, so a plain verify fails.
+# The intermediate is fetched from its AIA URL and accepted ONLY if its SHA-256 matches this pin; it then anchors the
+# chain (partial-chain verification), hostname checking stays on.
+YR2_URL = 'http://yr2.i.lencr.org/'
+YR2_SHA256 = '238b85a0099c65b970477d5724f1a1d475ce5058cffe4efa8733899bdb863c47'   # C=US, O=Let's Encrypt, CN=YR2 (to 2028-09-02)
+
+
+def ssl_ctx():
+    import hashlib, ssl
+    ctx = ssl.create_default_context()
+    try:
+        with urllib.request.urlopen(YR2_URL, timeout=60) as r:
+            der = r.read()
+        if hashlib.sha256(der).hexdigest() == YR2_SHA256:
+            ctx.load_verify_locations(cadata=der)
+            ctx.verify_flags |= getattr(ssl, 'VERIFY_X509_PARTIAL_CHAIN', 0x80000)
+        else:
+            print('YR2 pin mismatch -- default trust only', flush=True)
+    except Exception as e:
+        print('YR2 fetch failed (%s) -- default trust only' % e, flush=True)
+    return ctx
+
+
 def src(raw, name):
     p = os.path.join(raw, name)
     if not os.path.exists(p):
         print('download', name, flush=True)
         req = urllib.request.Request(SVS + name, headers={'User-Agent': 'yzr-net-data-feed'})
-        with urllib.request.urlopen(req, timeout=1800) as r, open(p + '.part', 'wb') as f:
+        with urllib.request.urlopen(req, timeout=1800, context=ssl_ctx()) as r, open(p + '.part', 'wb') as f:
             while True:
                 b = r.read(1 << 22)
                 if not b:
