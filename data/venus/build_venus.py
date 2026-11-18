@@ -20,7 +20,9 @@ RADAR, DEM = 'Venus_Magellan_C3-MDIR_Global_Mosaic_2025m.tif', 'Venus_Magellan_T
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'out')
 R_KM = 6051.8
-DETAIL_GAIN = 1.25                         # radar fine band vs the old map's (crisper than the old map)
+DETAIL_GAIN = 0.9                          # radar fine band vs the old map's (higher gain = speckle shimmer)
+SPECKLE = 0.7                              # Gaussian sigma (px) on the radar fine band
+SAT = 0.7                                  # chroma kept from the old orange palette
 SIZES = {8: (8192, 4096), 4: (4096, 2048), 2: (2048, 1024)}
 # previous site map: luminance quantiles (0..100 % in 32 steps) and luminance -> mean RGB table
 LUM_Q = [16.2, 78.7, 84.9, 89.6, 93.9, 97.8, 101.2, 104.2, 106.7, 109.2, 111.4, 113.3, 114.9, 116.8, 118.7, 120.3, 122.1,
@@ -254,11 +256,14 @@ def radar_detail(c8, raw):
     m[np.hypot(kx, ky) < 0.004] = 1
     hp = np.fft.irfft2(F * m, s=hp.shape).astype(np.float32)
     del F, m, ky, kx, ang
+    hp = cv2.GaussianBlur(hp, (0, 0), SPECKLE)
     ohp = L - cv2.medianBlur(np.clip(np.rint(L), 0, 255).astype(np.uint8), 15).astype(np.float32)
     k = float(ohp[valid].std() / hp[valid].std()) * DETAIL_GAIN
     w = cv2.GaussianBlur(cv2.erode(valid.astype(np.float32), np.ones((5, 5), np.uint8)), (0, 0), 2.5)
     Ln = L - w * ohp + w * hp * k
     out = old * np.clip((Ln / np.maximum(L, 1))[..., None], 0.5, 1.8)
+    Lo = (out @ np.array([0.2126, 0.7152, 0.0722], np.float32))[..., None]
+    out = Lo + SAT * (out - Lo)
     print('radar detail: radar = %.3f*L + %.1f, gain %.2f' % (a, b, k), flush=True)
     return np.clip(np.rint(out), 0, 255).astype(np.uint8)
 
