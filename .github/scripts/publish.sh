@@ -19,8 +19,12 @@ git push -q -f origin publish:"$branch"
 # jsDelivr ignores query strings and keeps a branch file up to 12 h at the edge: purge every published file of this feed
 # so clients get the new build at once (best effort; a failed purge only delays the update).
 if [ "$branch" = "data" ]; then
-  find "$feed" -type f | while read -r f; do
-    curl -s -m 30 "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@${branch}/${f}" >/dev/null || echo "purge failed: $f"
-  done
+  purge() { find "$feed" -type f ! -name "${1:-}" | while read -r f; do
+    curl -s -m 30 "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@${branch}/${f}" >/dev/null || echo "purge failed: $f"; done; }
+  purge meta.json   # files first; meta.json (the version clients see) only after the second, safe purge
+  # GitHub's own origin cache holds the previous file ~5 min, and a purge inside that window re-caches the OLD file
+  # for another 12 h -> purge again once the origin has turned over
+  sleep 360
+  purge
   echo "jsDelivr purged: $feed"
 fi

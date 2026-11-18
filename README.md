@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.3-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.4-2E7D32)
 
 </div>
 
