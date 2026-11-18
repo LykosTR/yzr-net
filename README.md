@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.7-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.8-2E7D32)
 
 </div>
 
@@ -44,7 +44,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Merkür yüzey haritaları: renk (MDIS MD3 mozaiği, doğal gri tona çekilmiş) ve gerçek ölçekli kabartmadan (MESSENGER 665 m DEM) hesaplanmış normal haritası (8K/4K/2K WebP, `mercury/`) | USGS Astrogeology, NASA/JHUAPL/CIW (MESSENGER) | elle (`mercury` iş akışı) |
 | Venüs yüzey haritaları: sitenin önceki Magellan tabanlı renk haritası (kuzey yukarı çevrilmiş), ince ayrıntıları Magellan radar mozaiğinden (şerit izleri temizlenmiş) ve gerçek ölçekli Magellan topografyasından normal haritası (8K/4K/2K WebP, `venus/`) | USGS Astrogeology, NASA/JPL (Magellan) | elle (`venus` iş akışı) |
 | Mars yüzey haritaları: Viking renkli mozaiği ve gerçek ölçekli MOLA kabartmasından normal haritası (8K/4K/2K WebP, `mars/`) | USGS Astrogeology, NASA/JPL (Viking), NASA/GSFC (MGS MOLA) | elle (`mars` iş akışı) |
-| Diğer gök cisimlerinin renk haritaları (Jüpiter, Satürn ve halkası, Uranüs, Neptün, cüce gezegenler, Io, Europa, Ganymede, Callisto, Titan, Dione, Iapetus): sitenin önceki dokuları tek parça haritaya birleştirilmiş (8K/4K/2K WebP, `textures/<cisim>/`) | NASA/JPL ve ilgili görev ekipleri (önceki site dokuları, kaynak listesi `data/textures/tiles.json`) | elle (`textures` iş akışı) |
+| Diğer gök cisimlerinin renk haritaları (Jüpiter, Satürn ve halkası, Uranüs, Neptün, cüce gezegenler, Io, Europa, Ganymede, Callisto, Titan, Dione, Iapetus) ve asteroit kaya dokusu: sitenin önceki dokuları tek parça haritaya birleştirilmiş (8K/4K/2K WebP, `textures/<cisim>/`) | NASA/JPL ve ilgili görev ekipleri (önceki site dokuları, kaynak listesi `data/textures/tiles.json`) | elle (`textures` iş akışı) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
 ## 📡 Veri kaynakları

@@ -64,10 +64,22 @@ def main():
         if only and key not in only:
             continue
         t0 = time.time()
-        img = assemble(key, spec, raw)
-        W, H = img.size
         d = os.path.join(OUT, key)
         os.makedirs(d, exist_ok=True)
+        if 'files' in spec:   # single maps copied as-is (e.g. the shared asteroid rock PBR set)
+            files = []
+            for name, url in spec['files'].items():
+                im = Image.open(io.BytesIO(fetch(url, os.path.join(raw, '%s_%s' % (key, name)))))
+                im = im.convert('L' if im.mode in ('L', 'I', 'I;16', 'F') else 'RGB')
+                f = '%s_%s.webp' % (key, name)
+                im.save(os.path.join(d, f), 'WEBP', quality=92, method=6)
+                files.append(f)
+            json.dump({'v': 1, 'built': built, 'files': files, 'source': 'previous Space Radar texture (see tiles.json)'},
+                      open(os.path.join(d, 'meta.json'), 'w'), indent=1)
+            print(key, files, flush=True)
+            continue
+        img = assemble(key, spec, raw)
+        W, H = img.size
         files = []
         for k in TIERS:
             w = k * 1024
