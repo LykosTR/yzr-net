@@ -20,6 +20,7 @@ RADAR, DEM = 'Venus_Magellan_C3-MDIR_Global_Mosaic_2025m.tif', 'Venus_Magellan_T
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'out')
 R_KM = 6051.8
+DETAIL_GAIN = 1.25                         # radar fine band vs the old map's (crisper than the old map)
 SIZES = {8: (8192, 4096), 4: (4096, 2048), 2: (2048, 1024)}
 # previous site map: luminance quantiles (0..100 % in 32 steps) and luminance -> mean RGB table
 LUM_Q = [16.2, 78.7, 84.9, 89.6, 93.9, 97.8, 101.2, 104.2, 106.7, 109.2, 111.4, 113.3, 114.9, 116.8, 118.7, 120.3, 122.1,
@@ -224,12 +225,50 @@ def old_colour(raw):
     return np.ascontiguousarray(c[::-1, ::-1])
 
 
+def radar_detail(c8, raw):
+    """Sharpen the old colour map with Magellan's own fine detail. The old map is the same mosaic but softer, with
+    wavy resampling ripples; the radar is sharp but carries orbit-strip steps and N-S scan streaks. So: broad tones
+    stay the old map's, the fine band (below ~15 px) comes from the radar where it has data:
+      - gaps are pre-filled with the old map in radar units, so no gap edge enters the detail band;
+      - the detail band is radar minus its MEDIAN (15 px): a strip-to-strip brightness step is an edge the median
+        keeps, so steps stay out of the detail -- only texture goes in;
+      - N-S / E-W streaks are removed from the detail band by an FFT wedge notch (+-3 deg around both axes);
+      - the old map's own fine band (ripples) is replaced, feathered at gap edges."""
+    H, W = c8.shape[:2]
+    old = c8.astype(np.float32)
+    L = old @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+    r0 = cv2.imread(src(raw, RADAR), cv2.IMREAD_UNCHANGED)
+    assert r0 is not None and r0.ndim == 2, 'radar TIFF unreadable'
+    gapn = cv2.dilate((r0 < 6).astype(np.uint8), np.ones((7, 7), np.uint8)).astype(np.float32)
+    r = cv2.resize(r0.astype(np.float32), (W, H), interpolation=cv2.INTER_AREA)
+    valid = cv2.resize(gapn, (W, H), interpolation=cv2.INTER_AREA) < 0.02
+    del r0, gapn
+    a, b = np.polyfit(L[valid][::50], r[valid][::50], 1)                 # radar ~ a * L + b
+    rf = np.where(valid, r, a * L + b).astype(np.float32)
+    hp = rf - cv2.medianBlur(np.clip(np.rint(rf), 0, 255).astype(np.uint8), 15).astype(np.float32)
+    F = np.fft.rfft2(hp)
+    ky = np.fft.fftfreq(H)[:, None] * H / W
+    kx = np.fft.rfftfreq(W)[None, :]
+    ang = np.degrees(np.arctan2(np.abs(ky), np.abs(kx) + 1e-12))
+    m = (np.clip((ang - 3.0) / 1.5, 0, 1) * np.clip((87.0 - ang) / 1.5, 0, 1)).astype(np.float32)
+    m[np.hypot(kx, ky) < 0.004] = 1
+    hp = np.fft.irfft2(F * m, s=hp.shape).astype(np.float32)
+    del F, m, ky, kx, ang
+    ohp = L - cv2.medianBlur(np.clip(np.rint(L), 0, 255).astype(np.uint8), 15).astype(np.float32)
+    k = float(ohp[valid].std() / hp[valid].std()) * DETAIL_GAIN
+    w = cv2.GaussianBlur(cv2.erode(valid.astype(np.float32), np.ones((5, 5), np.uint8)), (0, 0), 2.5)
+    Ln = L - w * ohp + w * hp * k
+    out = old * np.clip((Ln / np.maximum(L, 1))[..., None], 0.5, 1.8)
+    print('radar detail: radar = %.3f*L + %.1f, gain %.2f' % (a, b, k), flush=True)
+    return np.clip(np.rint(out), 0, 255).astype(np.uint8)
+
+
 def main():
     raw = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'raw')
     os.makedirs(raw, exist_ok=True); os.makedirs(OUT, exist_ok=True)
     t0 = time.time()
     W, H = SIZES[8]
-    c8 = old_colour(raw)   # s29: the previous site colour map (user's choice), relief stays Magellan
+    c8 = radar_detail(old_colour(raw), raw)   # s29: the previous site colour map (user's choice), relief stays Magellan
     d = cv2.imread(src(raw, DEM), cv2.IMREAD_UNCHANGED)
     assert d is not None and d.ndim == 2, 'DEM TIFF unreadable'
     dgap = d <= -32000
@@ -242,7 +281,7 @@ def main():
     meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': R_KM,
             'projection': 'equirectangular, lon 0 at centre, north up',
             'normal': 'tangent space x=east y=north z=up (OpenGL), true scale from Magellan topography 4641 m',
-            'colour': 'previous site Venus map (Magellan-based, old_tiles.txt), rotated 180 deg to north up',
+            'colour': 'previous site Venus map (Magellan-based, old_tiles.txt), rotated 180 deg to north up; fine band (<15 px) from Magellan C3-MDIR radar (median high-pass, FFT destriped)',
             'files': sorted(f for f in os.listdir(OUT) if f.endswith('.webp')),
             'source': 'colour: previous site Venus map (Magellan-based); relief: USGS Astrogeology Venus Magellan Topography Global 4641m v02',
             'credit': 'NASA/JPL (Magellan); USGS Astrogeology'}
