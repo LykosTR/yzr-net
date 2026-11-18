@@ -2,11 +2,10 @@
 """Pluto surface maps for Space Radar (USGS Astrogeology, public domain):
   image  : Pluto New Horizons Global Mosaic 300 m (LORRI + MVIC, 8-bit, 24888x12444, 0 = unimaged)
   relief : Pluto New Horizons Global DEM 300 m (int16 metres above R = 1188.3 km, -32768 = no data)
-The New Horizons mosaic is grey: colour is a natural-colour LUT on its low-passed luminance x its detail ratio (one palette,
-no green / blue). A resolution map Q (band-pass energy vs Sputnik / Tombaugh) marks the low-resolution approach imagery:
-there the luminance is de-rippled and grained and the relief fades out. The unimaged south (polar night) takes the
-previous site map's luminance (rolled onto it when the two correlate: the client rotation was tuned to it, see meta.align)
-through the same LUT, with a wavy feathered ramp and grain matched to the local detail.
+Colour is the previous site map (NASA enhanced colour, already in the USGS layout: the new maps are rolled onto it,
+see meta.align) at every frequency; New Horizons detail is multiplied in only where the mosaic is sharp (resolution
+map Q: fine/coarse band ratio vs Sputnik / Tombaugh) and locally aligned with the old map (no double edges).
+Relief from the DEM, faded with Q, the DEM coverage and toward the poles (caps smoothed in an azimuthal grid).
 Outputs (out/): pluto_{color,normal}_{2,4,8}k.webp + meta.json -- equirectangular, north up, east to the right;
 normal map tangent space x = east, y = north, z = up (OpenGL), true scale, flat where the DEM has no data.
 Needs: pip install numpy pillow opencv-python.   Usage: build_pluto.py [raw_dir]"""
@@ -24,21 +23,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'out')
 R_KM = 1188.3                               # TIFF label: A/B/C_AXIS_RADIUS 1188.3 km
 SIZES = {8: (8192, 4096), 4: (4096, 2048), 2: (2048, 1024)}
-AO = 0.18                                   # relief occlusion strength
 FEATHER = 24                                # px at 8k: DEM gap blend ramp
-RAMP, PERT = 128, 48                        # px at 8k: image gap blend ramp, starting 0..2*PERT px inside the data (the
-                                            # mosaic's rim is smeared terminator imagery; a wavy start hides straight edges)
-GRAIN = 0.7                                 # grain in filled areas: fraction of the missing high-frequency std
 RELIEF_IMAGED_ONLY = True                    # relief only where mission imagery is shown (DEM rim beyond it is noise)
-RATIO_MAX = 4.0                             # clip of the mosaic detail ratio L / lowpass L
-SAT = 0.9                                   # global saturation after the LUT
-LUT_T = np.array([0.0, 0.15, 0.35, 0.55, 0.75, 1.0])           # natural-colour LUT on normalised low-passed luminance
-LUT_RGB = np.array([[70, 40, 30], [100, 58, 42], [160, 112, 86], [200, 168, 140], [226, 210, 190], [242, 238, 230]], np.float32)
 REF_LON, REF_LAT = (150, 230), (-10, 50)   # Sputnik Planitia / Tombaugh Regio box (deg E, deg N): the resolution reference
 Q_EDGE = (0.4, 0.9)                         # Q = smoothstep of (fine/coarse band ratio / its median over the reference box)
-LUMA_MEAN, CONTRAST, MID_SAT = 150.0, 0.12, 1.15   # exposure (old map 136), S-curve slope gain, mid-tone saturation
-KNEE = None                                 # soft-knee start for highlights (fraction of 255), None = hard clip
-TOE = 0.12                                  # soft-toe start for shadows (fraction of 255)
+DETAIL = 0.8                                # New Horizons detail strength (x Q) on top of the previous map
+SHIFT_MAX = 1.5                             # px at 2k: local old/new misalignment above this -> no detail there
 NCC_MIN = 0.35
 MASK_COV, MASK_ERODE = 0.99, 5                # mosaic pixel valid above this source coverage; erosion (px) drops the partial rim
 
@@ -259,6 +249,35 @@ def sphere_noise(H, W, wavelengths, seed, unit_hp=False, chunk=256):
     return out / (float(out.std()) + 1e-6)
 
 
+def local_align_ok(L, M, col, tile=256, step=128):
+    """1 where the new mosaic and the old map agree locally (phase correlation of high-passed luminance on 256-px
+    tiles at 2k, stride 128, wrapping in longitude; |shift| <= SHIFT_MAX px or no reliable peak), 0 where they would
+    ghost; Hann-weighted tile votes, back at 8k"""
+    H, W = M.shape
+    W2, H2 = 2048, 1024
+    m2 = cv2.resize(M, (W2, H2), interpolation=cv2.INTER_AREA)
+    a = cv2.resize(L * M, (W2, H2), interpolation=cv2.INTER_AREA) / np.maximum(m2, 1e-4)
+    b = luma(cv2.resize(col, (W2, H2), interpolation=cv2.INTER_AREA))
+    a, b = (a - blur(a, 4)).astype(np.float32), (b - blur(b, 4)).astype(np.float32)
+    win = cv2.createHanningWindow((tile, tile), cv2.CV_32F)
+    acc, cnt = np.zeros((H2, W2), np.float32), np.zeros((H2, W2), np.float32)
+    n = bad = 0
+    for y in range(0, H2 - tile + 1, step):
+        for x in range(0, W2, step):
+            idx = np.arange(x, x + tile) % W2
+            mt = m2[y:y + tile][:, idx]
+            if mt.mean() < 0.5:
+                continue
+            (dx, dy), resp = cv2.phaseCorrelate(np.ascontiguousarray(a[y:y + tile][:, idx] * mt),
+                                                np.ascontiguousarray(b[y:y + tile][:, idx] * mt), win)
+            good = 1.0 if (np.hypot(dx, dy) <= SHIFT_MAX or resp < 0.05) else 0.0
+            n += 1; bad += good == 0
+            acc[y:y + tile][:, idx] += good * win
+            cnt[y:y + tile][:, idx] += win
+    print('local alignment: %d of %d tiles off by > %g px at 2k' % (bad, n, SHIFT_MAX), flush=True)
+    return cv2.resize(np.where(cnt > 1e-3, acc / np.maximum(cnt, 1e-3), 1.0).astype(np.float32), (W, H), interpolation=cv2.INTER_LINEAR)
+
+
 def polar(img, fn, n=2048, lat0=65.0, blend=(70.0, 80.0)):
     """caps |lat| > lat0 processed in an azimuthal-equidistant n x n grid (no pole pinch / longitude streaks there),
     reprojected back and blended over smoothstep(blend) in |lat|"""
@@ -356,85 +375,17 @@ def main():
         Image.fromarray(np.rint(cv2.resize(Q, (2048, 1024), interpolation=cv2.INTER_AREA) * 255).astype(np.uint8)).save(
             os.path.join(os.environ['PREVIEW_DIR'], KEY + '_Q.png'))
 
-    # --- low-Q (approach imagery): de-ripple at 2k + fractal grain ------------------------------------------------
-    m2 = cv2.resize(M, (2048, 1024), interpolation=cv2.INTER_AREA)
-    l2 = pushpull(cv2.resize(L * M, (2048, 1024), interpolation=cv2.INTER_AREA) / np.maximum(m2, 1e-4), (m2 > 0.5).astype(np.float32))
-    l2 = np.concatenate([l2[:, -32:], l2, l2[:, :32]], 1).astype(np.float32)      # wrap: filters must not see a border
-    l2 = cv2.bilateralFilter(cv2.medianBlur(l2, 5), 9, 12, 3)
-    l2 = cv2.resize(l2, (W + 256, H), interpolation=cv2.INTER_CUBIC)[:, 128:-128]   # 32 px @2k = 128 px @8k
-    Lc = L * Q + l2 * (1 - Q)
-    del l2, m2
-    hp = L - blur(L, 16)                                              # grain: 0.6 x median relative local std of the high-res
-    rel = np.sqrt(nblur(hp * hp, M, 32)) / np.maximum(nblur(L, M, 32), 8.0)   # region, multiplicative (dark terrain keeps
-    sd_hi = float(np.median(rel[Q > 0.8]))                            # its level: no black holes)
-    del hp, L, rel
-    print('low-Q grain: relative amplitude %.3f (applied after the polar caps)' % (0.6 * sd_hi), flush=True)
+    # --- colour: the previous site map (NASA enhanced colour) at every frequency, Lanczos to 8k (wrap-padded) ------
+    col = cv2.resize(np.concatenate([O[:, -8:], O, O[:, :8]], 1), (W + 32, H), interpolation=cv2.INTER_LANCZOS4)[:, 16:-16]
 
-    # --- gaps: old-map luminance (mapped onto the mosaic's scale, highs soft-clamped) + matched grain -------------
-    img = np.ones((H, W), bool)
-    Lall = Lc
-    if M.min() < 1:
-        rng = np.random.default_rng(3)
-        pert = cv2.resize(blur(rng.standard_normal((H // 32, W // 32), dtype=np.float32), 2), (W, H), interpolation=cv2.INTER_CUBIC)
-        pert = np.clip(pert / (pert.std() + 1e-6), -1, 1)
-        w = 1 - smooth((dist(M > 0) - PERT * (1 + pert)) / RAMP)       # 1 in the gap, ramps to 0 inside the data
-        del pert
-        core = (M > 0) & (w < 1e-3)
-        FY = cv2.resize(luma(O), (W, H), interpolation=cv2.INTER_CUBIC) if al['applied'] else pushpull(Lc, core.astype(np.float32))
-        a, b = blur(FY, 24)[core], blur(Lc, 24)[core]
-        FY = (FY - float(a.mean())) * float(b.std() / max(a.std(), 1e-3)) + float(b.mean())
-        del a, b
-        band = w > 0.5
-        p85 = float(np.percentile(FY[band], 85))                     # old-map bright curls must not stand out
-        FY = np.where(FY > p85, p85 + 0.2 * (FY - p85), FY).astype(np.float32)
-        hpY = Lc - blur(Lc, 2)
-        tgt = lowres_std(hpY * hpY, core.astype(np.float32))
-        tgt = np.minimum(tgt, float(np.percentile(tgt[core], 75)))
-        hpF = FY - blur(FY, 2)
-        have = lowres_std(hpF * hpF, np.ones_like(M))
-        del hpY, hpF
-        FY += GRAIN * np.sqrt(np.maximum(tgt * tgt - have * have, 0)) * sphere_noise(H, W, (2, 4, 8, 16), 7, unit_hp=True)
-        del tgt, have
-        Lall = Lc * (1 - w) + FY * w
-        if RELIEF_IMAGED_ONLY:
-            img = w < 0.5
-        del FY, w, band, core, Lc
-    del O
-
-    # --- polar caps: de-ripple + soften + grain in azimuthal projection (pole pinch, longitude streaks, ripple bands)
-    Lall = polar(Lall, lambda P: cv2.GaussianBlur(cv2.medianBlur(P, 5), (0, 0), 2))
-    # grain on low-Q terrain and the caps: isotropic 3-D noise on the sphere (no 1/cos lat stretch, no pole streaks)
-    lat_r = 90 - (np.arange(H) + 0.5) * 180 / H
-    gw = np.maximum((1 - Q) * M, smooth((np.abs(lat_r) - 70) / 10)[:, None].astype(np.float32))
-    Lall = Lall * (1 + np.clip(0.6 * sd_hi * gw * sphere_noise(H, W, (4, 8, 16), 11), -0.6, 0.6))
-    del gw
-
-    # --- colour: natural-colour LUT on low-passed luminance x detail ratio (one palette for data and fill) ------
-    Ls = blur(Lall, 6)
-    lo, hi = np.percentile(Ls[M > 0], [1, 99.5])
-    t = np.clip((Ls - lo) / max(hi - lo, 1e-3), 0, 1)
-    ratio = np.clip(Lall / np.maximum(Ls, 1.0), 0, RATIO_MAX)
-    del Lall, Ls
-    col = np.empty((H, W, 3), np.float32)
-    for i in range(3):
-        col[..., i] = np.interp(t, LUT_T, LUT_RGB[:, i]).astype(np.float32) * ratio
-    del t, ratio
-    Y = luma(col)[..., None]
-    col = Y + SAT * (col - Y)
-    del Y
-    # exposure + contrast: luma mean -> LUMA_MEAN, S-curve (slope 1 + CONTRAST at the mean), mid-tone saturation
-    Y = luma(col)
-    col *= LUMA_MEAN / float(Y.mean())
-    Y = luma(col)
-    m, A = float(Y.mean()), 110.0
-    col *= ((m + A * np.tanh((1 + CONTRAST) * (Y - m) / A)) / np.maximum(Y, 1.0))[..., None]
-    Y = luma(col)
-    wm = (smooth((Y / 255 - 0.25) / 0.1) * smooth((0.85 - Y / 255) / 0.1))[..., None]   # luma 0.35..0.75
-    col = Y[..., None] + (1 + (MID_SAT - 1) * wm) * (col - Y[..., None])
-    del Y, wm
-    print('colour luma mean %.1f' % float(luma(col).mean()), flush=True)
-    col[..., 1] = np.minimum(col[..., 1], col[..., 0])               # no green / blue anywhere
-    col[..., 2] = np.minimum(col[..., 2], col[..., 1] + 2)
+    # --- New Horizons detail only where it is sharper: colour *= 1 + w (L / gauss(L, 8) - 1), w = DETAIL x Q, and 0
+    #     where the local alignment residual exceeds SHIFT_MAX px at 2k (no double edges between old and new) -------
+    ok = local_align_ok(L, M, col)
+    w = (DETAIL * Q * ok).astype(np.float32)
+    ratio = np.where(M > 0, L / np.maximum(nblur(L, M, 8), 1.0), 1.0)
+    col *= (1 + w * (np.clip(ratio, 0.3, 3.0) - 1))[..., None]
+    img = dist(M > 0) > 64                                           # relief only well inside the imaged area
+    del ok, w, ratio, O, L
 
     # --- relief ---------------------------------------------------------------------------------------------------
     h, dcov = load_dem(raw, W, H)
@@ -470,18 +421,8 @@ def main():
     lat_r = 90 - (np.arange(H) + 0.5) * 180 / H
     qd *= (1 - smooth((np.abs(lat_r) - 82) / 6))[:, None].astype(np.float32)   # relief fades out over |lat| 82..88
     del Q
-    hp = (h - blur(h, 10)) * qd
-    sd = float(hp[D > 0].std())
-    ao = np.clip(1 + AO * np.tanh(hp / (3 * sd)), 0.55, 1.25)[..., None]
-    col = col * ao
-    del hp, ao, D
-    if KNEE is not None:
-        T = KNEE * 255
-        col = np.where(col > T, T + (255 - T) * (1 - np.exp(-(col - T) / (255 - T))), col)
-    T = TOE * 255                                                     # soft toe: shadows never crush to black
-    col = np.where(col < T, T - 0.6 * T * (1 - np.exp(np.minimum(col - T, 0) / (0.6 * T))), col)   # floor 0.4 T
-    c8 = np.clip(np.rint(np.nan_to_num(col, nan=128.0)), 0, 255).astype(np.uint8)
-    print('non-finite colour px', int((~np.isfinite(col)).any(2).sum()), flush=True)
+    del D
+    c8 = np.clip(np.rint(col), 0, 255).astype(np.uint8)
     del col
     for kk, (w, hh) in SIZES.items():
         cc = c8 if kk == 8 else cv2.resize(c8, (w, hh), interpolation=cv2.INTER_AREA)
@@ -495,9 +436,9 @@ def main():
             'align': al,
             'normal': 'tangent space x=east y=north z=up (OpenGL), true scale from the New Horizons DEM 300 m, xy scaled by the resolution map Q '
                       'x DEM coverage (feather 128 px); flat where the DEM has no data',
-            'colour': 'natural-colour LUT on low-passed (sigma 6 px @8k) New Horizons luminance x detail ratio, saturation %g, B <= G + 2, G <= R; '
-                      'approach imagery de-rippled + grain; unimaged south: previous map luminance (highs soft-clamped at p85, wavy ramp %d px, '
-                      'grain %g) through the same LUT; relief occlusion %g' % (SAT, RAMP, GRAIN, AO),
+            'colour': 'previous site map (NASA enhanced colour, Lanczos 4k -> 8k) at all frequencies; New Horizons detail '
+                      '(L / gauss(L, 8 px)) multiplied in with weight %g x Q (fine/coarse band ratio vs Sputnik/Tombaugh), zero where '
+                      'the local old/new shift exceeds %g px at 2k' % (DETAIL, SHIFT_MAX),
             'files': sorted(f for f in os.listdir(OUT) if f.endswith('.webp')),
             'source': 'USGS Astrogeology: Pluto New Horizons Global Mosaic 300m (Jul 2017), Pluto New Horizons Global DEM 300m (Jul 2017)',
             'credit': 'NASA/JHUAPL/SwRI (New Horizons), USGS Astrogeology'}
