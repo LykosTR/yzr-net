@@ -16,3 +16,11 @@ git checkout -q --orphan publish
 git add -A
 git commit -q -m "data $(date -u +%Y-%m-%dT%H:%MZ) ($feed)"
 git push -q -f origin publish:"$branch"
+# jsDelivr ignores query strings and keeps a branch file up to 12 h at the edge: purge every published file of this feed
+# so clients get the new build at once (best effort; a failed purge only delays the update).
+if [ "$branch" = "data" ]; then
+  find "$feed" -type f | while read -r f; do
+    curl -s -m 30 "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@${branch}/${f}" >/dev/null || echo "purge failed: $f"
+  done
+  echo "jsDelivr purged: $feed"
+fi
