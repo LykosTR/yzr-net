@@ -69,6 +69,12 @@ def main():
     c = cv2.imread(src(raw, COLOR), cv2.IMREAD_UNCHANGED)
     assert c is not None and c.ndim == 3, 'colour TIFF unreadable'
     c = cv2.resize(c[:, :, 2::-1], (W, H), interpolation=cv2.INTER_AREA).astype(np.float32)   # BGR -> RGB
+    # the mosaic's first column (lon 180) carries no-data: it became a dark pole-to-pole line on the globe -> rebuild
+    # every edge column darker than its inner neighbours from the wrap-around average
+    for j in (0, 1, -1, -2):
+        inner = c[:, 2] if j >= 0 else c[:, -3]
+        if c[:, j].mean() < 0.9 * inner.mean():
+            c[:, j] = (c[:, 2] + c[:, -3]) * 0.5
     band = c[int(H * 35 / 180):int(H * 145 / 180)].reshape(-1, 3)
     pct = np.linspace(100 / 32, 3100 / 32, 31)
     g = np.empty_like(c)

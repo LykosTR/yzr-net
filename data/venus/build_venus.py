@@ -198,27 +198,38 @@ def fill(v, gap, W, H, detail):
     return np.where(valid, s, filled).astype(np.float32)
 
 
+def old_colour(raw):
+    """The previous site Venus colour map (18 JPEG tiles, 6x3 x 1366 px, listed in old_tiles.txt row-major from the
+    north-west). It is the same Magellan mosaic rotated 180 deg (NCC 0.985 against the radar after flipping both axes),
+    so it is rotated back to north up / lon 0 at the centre -- then it sits exactly on the Magellan relief."""
+    urls = [u.strip() for u in open(os.path.join(HERE, 'old_tiles.txt')) if u.strip()]
+    assert len(urls) == 18, 'old_tiles.txt must list 18 tiles'
+    T = 1366
+    can = np.zeros((3 * T, 6 * T, 3), np.uint8)
+    for i, u in enumerate(urls):
+        p = os.path.join(raw, 'old_%02d.jpg' % i)
+        if not os.path.exists(p):
+            req = urllib.request.Request(u.replace('/s1600/', '/s0/'), headers={'User-Agent': 'yzr-net-data-feed'})
+            with urllib.request.urlopen(req, timeout=300) as r, open(p + '.part', 'wb') as f:
+                f.write(r.read())
+            os.replace(p + '.part', p)
+        t = cv2.imread(p, cv2.IMREAD_COLOR)
+        assert t is not None, 'tile unreadable: %d' % i
+        if t.shape[:2] != (T, T):
+            t = cv2.resize(t, (T, T), interpolation=cv2.INTER_AREA if t.shape[0] > T else cv2.INTER_CUBIC)
+        y, x = divmod(i, 6)
+        can[y * T:(y + 1) * T, x * T:(x + 1) * T] = t[:, :, ::-1]          # BGR -> RGB
+    W, H = SIZES[8]
+    c = cv2.resize(can, (W, H), interpolation=cv2.INTER_AREA)
+    return np.ascontiguousarray(c[::-1, ::-1])
+
+
 def main():
     raw = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'raw')
     os.makedirs(raw, exist_ok=True); os.makedirs(OUT, exist_ok=True)
     t0 = time.time()
     W, H = SIZES[8]
-    r = cv2.imread(src(raw, RADAR), cv2.IMREAD_UNCHANGED)
-    assert r is not None and r.ndim == 2, 'radar TIFF unreadable'
-    gap = cv2.dilate((r < 6).astype(np.uint8), np.ones((7, 7), np.uint8)) > 0   # + the dark seam pixels at strip edges
-    rf = r.astype(np.float32)
-    hf = rf - cv2.GaussianBlur(rf, (0, 0), 6)
-    detail = float(hf[~gap].std()) * 1.5
-    del hf
-    v = fill(rf, gap, W, H, detail)
-    del r, rf, gap
-    # histogram-match the radar to the previous map's luminance, then colour through its palette
-    qs = np.percentile(v, np.linspace(0, 100, len(LUM_Q)))
-    lum = np.interp(v, qs, LUM_Q).astype(np.float32)
-    lut = np.array(LUT, np.float32)
-    col = np.dstack([np.interp(lum, LUT_L, lut[:, i]) for i in range(3)])
-    c8 = np.clip(np.rint(col), 0, 255).astype(np.uint8)
-    del v, lum, col
+    c8 = old_colour(raw)   # s29: the previous site colour map (user's choice), relief stays Magellan
     d = cv2.imread(src(raw, DEM), cv2.IMREAD_UNCHANGED)
     assert d is not None and d.ndim == 2, 'DEM TIFF unreadable'
     dgap = d <= -32000
@@ -231,9 +242,9 @@ def main():
     meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': R_KM,
             'projection': 'equirectangular, lon 0 at centre, north up',
             'normal': 'tangent space x=east y=north z=up (OpenGL), true scale from Magellan topography 4641 m',
-            'colour': 'Magellan C3-MDIR radar backscatter, histogram-matched and coloured with the previous site palette; gaps inpainted',
+            'colour': 'previous site Venus map (Magellan-based, old_tiles.txt), rotated 180 deg to north up',
             'files': sorted(f for f in os.listdir(OUT) if f.endswith('.webp')),
-            'source': 'USGS Astrogeology: Venus Magellan C3-MDIR Global Mosaic 2025m, Venus Magellan Topography Global 4641m v02',
+            'source': 'colour: previous site Venus map (Magellan-based); relief: USGS Astrogeology Venus Magellan Topography Global 4641m v02',
             'credit': 'NASA/JPL (Magellan); USGS Astrogeology'}
     json.dump(meta, open(os.path.join(OUT, 'meta.json'), 'w'), indent=1)
     print('done in', round(time.time() - t0), 's')
