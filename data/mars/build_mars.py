@@ -78,7 +78,11 @@ def main():
         lo = c[..., i] < q[0]; hi = c[..., i] > q[-1]
         g[..., i][lo] = REF_Q[i][0] + (c[..., i][lo] - q[0]) * (REF_Q[i][1] - REF_Q[i][0]) / max(q[1] - q[0], 1e-3)
         g[..., i][hi] = REF_Q[i][-1] + (c[..., i][hi] - q[-1]) * (REF_Q[i][-1] - REF_Q[i][-2]) / max(q[-1] - q[-2], 1e-3)
-    g = g * 0.92 + np.array([0.0, -3.0, 2.0], np.float32)   # rendered next to the old map it read brighter / more orange: a touch darker, less yellow
+    g = g * 0.92 + np.array([0.0, -3.0, 0.0], np.float32)   # rendered next to the old map it read brighter / more orange: a touch darker, less yellow
+    # Viking's dark albedo regions carry a blue/violet cast that the per-channel match turns into blue spots: Mars has
+    # no blue surface -> blue is capped below green and green below red (the dark regions read dark brown, as before)
+    g[..., 1] = np.minimum(g[..., 1], g[..., 0] * 0.62)
+    g[..., 2] = np.minimum(g[..., 2], g[..., 1] * 0.80 + 4)
     # ice caps (bright, unsaturated in Viking) keep their own near-white instead of the red grade
     mx, mn = c.max(axis=2), c.min(axis=2)
     sat, lum = 1 - mn / np.maximum(mx, 1), c.mean(axis=2)

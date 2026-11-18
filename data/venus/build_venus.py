@@ -66,28 +66,58 @@ def normals(h):
     return np.clip(np.rint((n * 0.5 + 0.5) * 255), 0, 255).astype(np.uint8)
 
 
+def vmed5(a, axis):
+    """5-tap median along one axis (rows: axis 0, columns: axis 1), edge-clamped."""
+    st = [np.roll(a, k, axis=axis) for k in (-2, -1, 0, 1, 2)]
+    return np.median(np.stack(st), axis=0).astype(np.float32)
+
+
+def delines(s, valid):
+    """Magellan swath seams: 1-3 px rows / columns offset from their neighbours over a long run. A pixel whose
+    across-line median residual stays coherent along the line for ~150 px is a seam -> replaced by that median.
+    Real lineaments are neither perfectly axis-aligned nor that coherent, so they survive."""
+    for ax, k in ((0, (151, 1)), (1, (1, 151))):   # horizontal seams: median across rows, coherence along x; then vertical
+        med = vmed5(s, ax)
+        r = np.where(valid, s - med, 0).astype(np.float32)
+        rb = cv2.blur(r, k)
+        thr = 0.35 * float(r[valid].std())
+        seam = (np.abs(rb) > thr) & valid
+        seam = cv2.dilate(seam.astype(np.uint8), np.ones((3, 3) if ax == 0 else (3, 3), np.uint8)) > 0
+        s = np.where(seam, med, s)
+    return s
+
+
 def fill(v, gap, W, H, detail):
-    """v float32 full res, gap bool full res -> float32 WxH with gaps filled (low-frequency inpaint + fine noise)."""
+    """v float32 full res, gap bool full res -> float32 WxH: seams removed, THIN gaps (orbit strips, dropout rows)
+    inpainted at full output resolution from their neighbours, WIDE gaps (wedges, polar caps) from a low-frequency
+    inpaint plus fine noise of the surrounding texture strength."""
     vz = np.where(gap, 0, v).astype(np.float32)
     s = cv2.resize(vz, (W, H), interpolation=cv2.INTER_AREA)
     g = cv2.resize(gap.astype(np.float32), (W, H), interpolation=cv2.INTER_AREA)
     s = np.where(g < 0.999, s / np.maximum(1 - g, 1e-3), 0)          # mean of the VALID part of each output pixel
+    mask = cv2.dilate((g > 0.02).astype(np.uint8), np.ones((3, 3), np.uint8))
+    valid = mask == 0
+    if detail > 0:
+        s = delines(s, valid)
+    # wide-gap base: low-frequency inpaint (+ noise)
     lo_w, lo_h = 1024, 512
-    small = cv2.resize(s, (lo_w, lo_h), interpolation=cv2.INTER_AREA)
-    smask = (cv2.resize(g, (lo_w, lo_h), interpolation=cv2.INTER_AREA) > 0.02).astype(np.uint8)
-    smask = cv2.dilate(smask, np.ones((3, 3), np.uint8))
-    lo, hi = float(small[smask == 0].min()), float(small[smask == 0].max())
-    s8 = np.clip(np.rint((small - lo) / (hi - lo) * 255), 0, 255).astype(np.uint8)   # low-frequency base only
-    inp = cv2.inpaint(s8, smask, 8, cv2.INPAINT_TELEA).astype(np.float32) / 255 * (hi - lo) + lo
-    base = cv2.resize(inp, (W, H), interpolation=cv2.INTER_CUBIC)
-    if detail > 0:   # fine fractal noise so a filled gap carries texture of the surrounding strength
+    small = cv2.resize(np.where(valid, s, 0).astype(np.float32), (lo_w, lo_h), interpolation=cv2.INTER_AREA)
+    sg = cv2.resize(valid.astype(np.float32), (lo_w, lo_h), interpolation=cv2.INTER_AREA)
+    small = np.where(sg > 0.05, small / np.maximum(sg, 1e-3), 0).astype(np.float32)
+    smask = cv2.dilate((sg < 0.98).astype(np.uint8), np.ones((3, 3), np.uint8))
+    base = cv2.resize(cv2.inpaint(small, smask, 8, cv2.INPAINT_TELEA), (W, H), interpolation=cv2.INTER_CUBIC)
+    if detail > 0:
         rng = np.random.default_rng(7)
         nz = np.zeros((H, W), np.float32)
         for k, amp in ((64, 1.0), (128, 0.6), (256, 0.4), (512, 0.25), (1024, 0.15)):
             nz += cv2.resize(rng.standard_normal((k // 2, k)).astype(np.float32), (W, H), interpolation=cv2.INTER_CUBIC) * amp
         base += nz / nz.std() * detail
-    a = np.clip(g * 1.4, 0, 1)
-    return s * (1 - a) + base * a
+    # thin gaps: full-resolution inpaint from the neighbouring pixels
+    near = cv2.inpaint(np.where(valid, s, 0).astype(np.float32), mask, 4, cv2.INPAINT_TELEA)
+    dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)               # px from the nearest valid pixel
+    wide = np.clip((dist - 6) / 10, 0, 1)                             # thin (<= ~6 px from data) -> neighbours, wider -> base
+    filled = near * (1 - wide) + base * wide
+    return np.where(valid, s, filled).astype(np.float32)
 
 
 def main():
