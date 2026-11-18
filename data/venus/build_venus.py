@@ -87,6 +87,79 @@ def delines(s, valid):
     return s
 
 
+def nblur(f, valid, k):
+    """box blur of f over VALID pixels only (normalised convolution)."""
+    w = valid.astype(np.float32)
+    return cv2.blur(np.where(valid, f, 0).astype(np.float32), k) / np.maximum(cv2.blur(w, k), 1e-3)
+
+
+def destripe(s, valid):
+    """Magellan orbit swaths run north-south and differ slightly in gain: narrow vertical brightness bands. The band
+    signal = what is left after removing the across-track (x) trend over 41 px, averaged along-track (y) over 401 px;
+    it is subtracted. Then the same once more with the axes swapped for the rarer east-west seams."""
+    for kx, ky in (((41, 1), (1, 401)), ((1, 41), (401, 1))):
+        hp = s - nblur(s, valid, kx)
+        band = nblur(hp, valid, ky)
+        s = np.where(valid, s - band, s).astype(np.float32)
+    return s
+
+
+def mirror_fill(s, mask):
+    """each gap pixel takes the valid pixel mirrored across its nearest gap edge (2*nearest - p): real neighbouring
+    radar texture continues into the gap instead of a smooth blur; falls back to the nearest valid pixel."""
+    H, W = s.shape
+    inv = (mask == 0).astype(np.uint8)                       # 0 where valid -> distance to the nearest VALID pixel
+    _, lab = cv2.distanceTransformWithLabels(1 - inv, cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+    vy, vx = np.nonzero(inv)                                 # row-major order = label order (1..n)
+    gy, gx = np.nonzero(mask)
+    li = lab[gy, gx] - 1
+    ny, nx = vy[li], vx[li]
+    ry, rx = np.clip(2 * ny - gy, 0, H - 1), (2 * nx - gx) % W
+    ok = inv[ry, rx] > 0
+    out = s.copy()
+    out[gy, gx] = np.where(ok, s[ry, rx], s[ny, nx])
+    return out
+
+
+def destep(s, valid, R=48):
+    """Magellan mosaic tiles carry slightly different gains: straight brightness STEPS along fixed rows / columns.
+    The step across each row boundary (s[y+1]-s[y]) averaged along x over 301 px stays near 0 for real terrain and is
+    coherent at a tile seam; such steps are cancelled with a linear ramp over +-R px (half on each side)."""
+    k = np.concatenate([np.linspace(0.0, 0.5, R, endpoint=False)[1:], [0.5], [-0.5], -np.linspace(0.5, 0.0, R, endpoint=False)[:0:-1][::-1][::-1]])
+    k = np.concatenate([np.linspace(1.0 / R, 1.0, R) * 0.5, -np.linspace(1.0, 1.0 / R, R) * 0.5]).astype(np.float32)
+    for ax in (0, 1):
+        B = 8                                                          # band-to-band step: survives the seam's own gap rows
+        def wsum(f):                                                   # f summed over rows y-B+1..y (along ax)
+            c = np.cumsum(f, axis=ax, dtype=np.float64)
+            sh = np.roll(c, B, axis=ax)
+            if ax == 0: sh[:B] = 0
+            else: sh[:, :B] = 0
+            return (c - sh).astype(np.float32)
+        sv, wv = wsum(np.where(valid, s, 0)), wsum(valid.astype(np.float32))
+        up = sv / np.maximum(wv, 1e-3)                                 # mean of rows y-B+1..y
+        dn = np.roll(sv, -B, axis=ax) / np.maximum(np.roll(wv, -B, axis=ax), 1e-3)   # mean of rows y+1..y+B
+        d = dn - up                                                    # step across the boundary y | y+1 (unique peak)
+        edge = np.zeros_like(d, dtype=bool)
+        if ax == 0: edge[:B] = True; edge[-B:] = True
+        else: edge[:, :B] = True; edge[:, -B:] = True
+        d = np.where(edge, 0, d).astype(np.float32)
+        vv = (wv >= B - 0.5) & (np.roll(wv, -B, axis=ax) >= B - 0.5) & ~edge   # only fully valid windows on both sides
+        D = nblur(d, vv, (301, 1) if ax == 0 else (1, 301))
+        cov = cv2.blur(vv.astype(np.float32), (301, 1) if ax == 0 else (1, 301))
+        D = np.where(cov > 0.6, np.clip(D, -25, 25), 0).astype(np.float32)   # a step needs >= 60 % clean support
+        thr = 4.0 * float(np.median(np.abs(D[vv])))
+        aD = np.abs(D)
+        pk = aD >= cv2.dilate(aD, np.ones((2 * B + 1, 1) if ax == 0 else (1, 2 * B + 1), np.uint8))   # one response per seam
+        pk &= aD > np.roll(aD, 1, axis=ax)                              # plateau tie (flat runs): keep the first row
+        D = np.where((aD > thr) & pk, D, 0).astype(np.float32)
+        C = np.zeros_like(D)                                           # seam between rows p and p+1, step D = below - above
+        for t in range(-R + 1, R + 1):                                 # rows p+t: above (t <= 0) +D/2, below (t >= 1) -D/2, linear to 0 at R
+            g = 0.5 * (1 - (-t) / R) if t <= 0 else -0.5 * (1 - (t - 1) / R)
+            C += np.float32(g) * np.roll(D, t, axis=ax)
+        s = np.where(valid, s + C, s).astype(np.float32)
+    return s
+
+
 def fill(v, gap, W, H, detail):
     """v float32 full res, gap bool full res -> float32 WxH: seams removed, THIN gaps (orbit strips, dropout rows)
     inpainted at full output resolution from their neighbours, WIDE gaps (wedges, polar caps) from a low-frequency
@@ -99,6 +172,8 @@ def fill(v, gap, W, H, detail):
     valid = mask == 0
     if detail > 0:
         s = delines(s, valid)
+        s = destripe(s, valid)
+        s = destep(s, valid)
     # wide-gap base: low-frequency inpaint (+ noise)
     lo_w, lo_h = 1024, 512
     small = cv2.resize(np.where(valid, s, 0).astype(np.float32), (lo_w, lo_h), interpolation=cv2.INTER_AREA)
@@ -114,6 +189,9 @@ def fill(v, gap, W, H, detail):
         base += nz / nz.std() * detail
     # thin gaps: full-resolution inpaint from the neighbouring pixels
     near = cv2.inpaint(np.where(valid, s, 0).astype(np.float32), mask, 4, cv2.INPAINT_TELEA)
+    if detail > 0:   # thin gaps: the neighbours' real radar texture mirrored in (a smooth inpaint read as a soft band)
+        mir = mirror_fill(s, mask)
+        near = mir - cv2.blur(mir, (9, 9)) + cv2.blur(near, (9, 9))
     dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)               # px from the nearest valid pixel
     wide = np.clip((dist - 6) / 10, 0, 1)                             # thin (<= ~6 px from data) -> neighbours, wider -> base
     filled = near * (1 - wide) + base * wide
