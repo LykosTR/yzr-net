@@ -127,7 +127,7 @@ for _k, _i, _r, _m, _rel, _lut in (
 #   the three-band estimate reads paler than true colour: Gonggong's B-V equals Mars' (~1.36) -> saturation set to Mars'
 #   true-colour look, Sedna a step less red; Gonggong (1, .70, .50), Sedna (1, .74, .57)
 _ILL = 'Astra-Planetshine (deviantart.com/astra-planetshine, "Uranus Project Missing Data"), recoloured; colours: published TNO photometry'
-BODIES['gonggong'] = dict(name='Gonggong', tno=True, terrain='umbriel', rot=(63, 141, -38), seed=11, radius_km=615, top=8, mean=58,
+BODIES['gonggong'] = dict(name='Gonggong', tno=True, terrain='umbriel', despot=2.2, rot=(63, 141, -38), seed=11, radius_km=615, top=8, mean=58,
                           contrast=1.25, relief_km=10, hl=1.35, rgb=(1.0, 0.70, 0.50), rgb2=(1.0, 0.79, 0.64), credit=_ILL,
                           source='ILLUSTRATIVE: Umbriel terrain (artist map) rotated, recoloured to Gonggong (very red, geometric albedo 0.14)')
 BODIES['sedna'] = dict(name='Sedna', tno=True, terrain='ariel', rot=(-112, 37, 74), seed=23, radius_km=497, top=8, mean=92,
@@ -947,6 +947,26 @@ def hl_cap(L, c, W):
     return (r * base).astype(np.float32)
 
 
+def despot(L, thr, W):
+    """remove large bright patches (Wunda's floor): where L exceeds thr x the broad lowpass, fill from the surroundings
+    (1k TELEA inpaint, feathered) with a little grain, so no painted white disc can give the source away"""
+    H = L.shape[0]
+    r = L / np.maximum(lblur(L, W / 8.0), 1.0)
+    m = ((r > thr) | (L / np.maximum(lblur(L, W / 30.0), 1.0) > 1.8)).astype(np.uint8)
+    m = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (int(W / 60) * 2 + 1,) * 2))
+    w1, h1 = 1024, 512
+    sm = cv2.resize(L, (w1, h1), interpolation=cv2.INTER_AREA)
+    mm = (cv2.resize(m.astype(np.float32), (w1, h1), interpolation=cv2.INTER_AREA) > 0.01).astype(np.uint8)
+    p = 32
+    inp = cv2.inpaint(wrap_pad(np.where(mm > 0, 0, sm).astype(np.float32), p), wrap_pad(mm, p), 6, cv2.INPAINT_TELEA)[:, p:-p]
+    inp = cv2.GaussianBlur(inp, (0, 0), 3)
+    F = cv2.resize(inp, (W, H), interpolation=cv2.INTER_CUBIC)
+    F = F * (1 + 0.06 * sphere_noise(H, W, [W / 300.0, W / 700.0], 5))
+    w = blur(m.astype(np.float32), W / 200.0)
+    print('  despot: %.4f of the map filled' % float(m.mean()), flush=True)
+    return (L * (1 - w) + F * w).astype(np.float32)
+
+
 def sphere_rotate(img, Rm, chunk=256):
     """equirectangular field (H, W[, C]) seen through a rotation of the sphere: out(d) = img(Rm^T d)"""
     H, W = img.shape[:2]
@@ -988,6 +1008,8 @@ def build_tno(key, cfg, raw, out_root, Wt=None):
     up = W / A.shape[1]
     L = luma(cv2.resize(A, (W, H), interpolation=cv2.INTER_AREA if up <= 1 else cv2.INTER_LANCZOS4).astype(np.float32))
     del A
+    if cfg.get('despot'):
+        L = despot(L, cfg['despot'], W)
     L = sphere_rotate(L, Rm)
     L = L + ART_USM[1] * (L - blur(L, ART_USM[0] * max(up, 1.0)))
     if cfg.get('hl'):                                                 # bright spots (painted / copied terrain): soft cap
