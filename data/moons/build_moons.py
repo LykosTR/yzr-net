@@ -113,6 +113,7 @@ for _k, _i, _r, _m, _rel, _lut in (
     _x = '.Png' if _k == 'ariel' else '.png'
     # s37: hybrid = Astra-Planetshine's full-globe map (sharp, unseen half painted) x the real Voyager large-scale albedo
     BODIES[_k] = dict(name=_k.capitalize(), radius_km=_r, art=(ART_PACK, 'uranus_project_missing_data.zip'),
+                      hl={'umbriel': 1.6}.get(_k),   # Wunda's ring is real (~2x) but painted pure white
                       art_color=_A + 'Colour' + _x, art_bump=_A + 'Bump' + _x, relief_km=_rel,
                       grey='ura%dvuu2.tif' % _i, url='https://maps.jpl.nasa.gov/tmaps/pix/', last_col_bad=True,
                       mean=_m, top=8, flip=True, rim=40, pole_cut=72, lut=_lut,
@@ -120,12 +121,17 @@ for _k, _i, _r, _m, _rel, _lut in (
                       source='Astra-Planetshine "Uranus Project Missing Data" colour + bump maps x USGS Voyager 2 airbrush mosaic '
                              '(southern hemisphere), JPL Solar System Simulator map %d/%s' % (_i, _k.capitalize()))
 # s37: Gonggong / Sedna -- no spacecraft image: illustrative globes (a Uranian moon's terrain rotated + recoloured)
+# colours (sRGB) from photometry vs the Sun (B-V 0.65, V-R 0.36): reflectance B/V/R -> linear (R, V, B) -> gamma 2.2
+#   Gonggong B-V 1.38, V-R 0.86 (Herschel 'TNOs are Cool'): (1, .63, .32) lin -> (1, .81, .60); provinces lighter (methane frost)
+#   Sedna    B-V 1.24, V-R 0.78: (1, .68, .39) lin -> (1, .84, .66); provinces a little redder
+#   the three-band estimate reads paler than true colour: Gonggong's B-V equals Mars' (~1.36) -> saturation set to Mars'
+#   true-colour look, Sedna a step less red; Gonggong (1, .70, .50), Sedna (1, .74, .57)
 _ILL = 'Astra-Planetshine (deviantart.com/astra-planetshine, "Uranus Project Missing Data"), recoloured; colours: published TNO photometry'
 BODIES['gonggong'] = dict(name='Gonggong', tno=True, terrain='umbriel', rot=(63, 141, -38), seed=11, radius_km=615, top=8, mean=58,
-                          contrast=1.25, relief_km=10, rgb=(0.54, 0.33, 0.25), rgb2=(0.58, 0.44, 0.38), credit=_ILL,
+                          contrast=1.25, relief_km=10, hl=1.35, rgb=(1.0, 0.70, 0.50), rgb2=(1.0, 0.79, 0.64), credit=_ILL,
                           source='ILLUSTRATIVE: Umbriel terrain (artist map) rotated, recoloured to Gonggong (very red, geometric albedo 0.14)')
 BODIES['sedna'] = dict(name='Sedna', tno=True, terrain='ariel', rot=(-112, 37, 74), seed=23, radius_km=497, top=8, mean=92,
-                       contrast=0.85, relief_km=8, rgb=(0.70, 0.45, 0.35), rgb2=(0.64, 0.36, 0.25), credit=_ILL,
+                       contrast=0.85, relief_km=8, hl=1.35, rgb=(1.0, 0.74, 0.57), rgb2=(1.0, 0.68, 0.50), credit=_ILL,
                        source='ILLUSTRATIVE: Ariel terrain (artist map) rotated, recoloured to Sedna (deep red, geometric albedo 0.32)')
 # all px at the top tier (8k); scaled with the working width
 MASK_COV, MASK_ERODE = 0.99, 5              # source pixel valid above this coverage; erosion drops the partial rim
@@ -876,6 +882,8 @@ def build_art(key, cfg, raw, out_root, Wt=None):
     L = La * R
     # sharpen: unsharp mask on the luminance (the painted bump is NOT used here: its 8-bit terraces became contour lines)
     L = L + ART_USM[1] * (L - blur(L, ART_USM[0] * max(up, 1.0)))
+    if cfg.get('hl'):                                                 # bright spots (painted / copied terrain): soft cap
+        L = hl_cap(L, cfg['hl'], W)
     L = np.maximum(L, 0.5)
     Cr = 1 + ART_SAT * (A / La[..., None] - 1)
     del A, R
@@ -929,6 +937,16 @@ def build_art(key, cfg, raw, out_root, Wt=None):
     print('  %s done in %d s' % (key, time.time() - t0), flush=True)
 
 
+def hl_cap(L, c, W):
+    """soft cap of bright spots relative to the surrounding terrain (lowpass ~1/40 of the circumference): ratios above
+    c are compressed (tanh), the dark side untouched -- a pure-white painted crater / ring no longer stands out"""
+    base = lblur(L, W / 40.0)
+    r = L / np.maximum(base, 1.0)
+    k = 0.4 * (c - 1)
+    r = np.where(r > c - k, (c - k) + k * np.tanh((r - (c - k)) / k), r)
+    return (r * base).astype(np.float32)
+
+
 def sphere_rotate(img, Rm, chunk=256):
     """equirectangular field (H, W[, C]) seen through a rotation of the sphere: out(d) = img(Rm^T d)"""
     H, W = img.shape[:2]
@@ -972,6 +990,8 @@ def build_tno(key, cfg, raw, out_root, Wt=None):
     del A
     L = sphere_rotate(L, Rm)
     L = L + ART_USM[1] * (L - blur(L, ART_USM[0] * max(up, 1.0)))
+    if cfg.get('hl'):                                                 # bright spots (painted / copied terrain): soft cap
+        L = hl_cap(L, cfg['hl'], W)
     L = np.maximum(L, 1.0) / float(np.mean(L))
     L = L ** cfg.get('contrast', 1.0)
     # --- colour: measured colour, soft provinces (one sphere-noise octave, ~1/7 of the circumference) --------------------------------
