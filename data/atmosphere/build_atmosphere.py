@@ -5,6 +5,7 @@ Outputs (data/atmosphere/out/):
   earth.bin  -- 256-byte float32 header (model parameters) + two RGBA float16 tables:
                 transmittance T(r, mu)      TW x TH  (Bruneton 2017 parametrisation)
                 multiple scattering Psi(r, mu_s)  MW x MH  (Hillaire 2020, isotropic 2nd order / (1 - f_ms))
+                sky irradiance E_sky(mu_s)  IW x 1  (ground lighting by the sky dome: day side fill, twilight)
   meta.json  -- version, build time, parameters (human readable)
 
 Units: lengths in Earth radii (1 = 6371 km), coefficients per Earth radius. The renderer marches single scattering
@@ -37,6 +38,8 @@ ALBEDO = 0.30
 
 TW, TH = 256, 64          # transmittance (mu, r)
 MW, MH = 32, 32           # multiple scattering (mu_s, r)
+IW = 64                   # sky irradiance on the ground E_sky(mu_s), mu_s in [IMU0, 1]
+IMU0 = -0.35
 
 # scene units
 k = RE_M / X
@@ -158,13 +161,62 @@ def build_ms(T):
     return out
 
 
+def ms_lookup(M, r, mus):
+    """bilinear lookup of the multiple scattering table (same mapping as the shader)"""
+    x = np.clip((mus * 0.5 + 0.5) * MW - 0.5, 0, MW - 1)
+    y = np.clip((r - RG) / (RT - RG) * MH - 0.5, 0, MH - 1)
+    x0, y0 = np.floor(x).astype(int), np.floor(y).astype(int)
+    x1, y1 = np.minimum(x0 + 1, MW - 1), np.minimum(y0 + 1, MH - 1)
+    fx, fy = (x - x0)[..., None], (y - y0)[..., None]
+    return (M[y0, x0] * (1 - fx) * (1 - fy) + M[y0, x1] * fx * (1 - fy) +
+            M[y1, x0] * (1 - fx) * fy + M[y1, x1] * fx * fy)
+
+
+def build_irr(T, M):
+    """sky irradiance on a horizontal ground patch at sea level (sun irradiance = 1): the hemisphere integral of the
+    single (Rayleigh + Mie, true phase) plus multiple scattered radiance, cos-weighted. Lights the ground in twilight."""
+    nd, ns = 512, 48
+    i = np.arange(nd) + 0.5
+    cz = 1.0 - i / nd                                   # uniform in cos(zenith) over the upper hemisphere
+    th = np.pi * (1.0 + 5 ** 0.5) * i
+    sz = np.sqrt(1 - cz * cz)
+    dirs = np.stack([sz * np.cos(th), sz * np.sin(th), cz], -1)
+    r0 = RG + 1e-6
+    out = np.zeros((1, IW, 3))
+    gg = G_MIE * G_MIE
+    for q in range(IW):
+        mus = IMU0 + (q + 0.5) / IW * (1.0 - IMU0)
+        sun = np.array([np.sqrt(max(1 - mus * mus, 0.0)), 0.0, mus])
+        tmax = dist_top(np.full(nd, r0), cz)
+        t = (np.arange(ns) + 0.5)[None, :] / ns * tmax[:, None]
+        dt = (tmax / ns)[:, None]
+        P = np.array([0.0, 0.0, r0])[None, None, :] + dirs[:, None, :] * t[..., None]
+        pr = np.linalg.norm(P, axis=-1)
+        pmu = (P @ sun) / pr
+        dr, dm, do = density(pr - RG)
+        sR = dr[..., None] * bR
+        sM = (dm * bMs)[..., None]
+        ext = sR + (dm * bMa)[..., None] + sM + do[..., None] * bO
+        od = np.cumsum(ext * dt[..., None], axis=1) - ext * dt[..., None] * 0.5
+        Tv = np.exp(-od)
+        nu = dirs @ sun
+        pR = (3 / (16 * np.pi) * (1 + nu * nu))[:, None, None]
+        pM = (3 / (8 * np.pi) * ((1 - gg) * (1 + nu * nu)) / ((2 + gg) * np.maximum(1 + gg - 2 * G_MIE * nu, 1e-4) ** 1.5))[:, None, None]
+        Ts = trans_lookup(T, pr, pmu) * sun_vis(pr, pmu)[..., None]
+        S = Ts * (sR * pR + sM * pM) + ms_lookup(M, pr, pmu) * (sR + sM)
+        L = (Tv * S * dt[..., None]).sum(1)                # [nd, 3]
+        out[0, q] = (L * cz[:, None]).sum(0) * (2 * np.pi / nd)
+    return out
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     t0 = time.time()
     T = build_transmittance()
     M = build_ms(T)
+    I = build_irr(T, M)
     hdr = np.zeros(64, np.float32)
-    vals = [0.0, X, RT, hR, hM, ozC, ozW, *bR, bMs, bMa, *bO, G_MIE, TW, TH, MW, MH, ALBEDO]
+    vals = [0.0, X, RT, hR, hM, ozC, ozW, *bR, bMs, bMa, *bO, G_MIE, TW, TH, MW, MH, ALBEDO, IW, IMU0]
     hdr[:len(vals)] = vals
 
     def rgba16(a):
@@ -177,13 +229,14 @@ def main():
         f.write(hdr[1:].tobytes())
         f.write(rgba16(T))
         f.write(rgba16(M))
+        f.write(rgba16(I))
     meta = {'version': VERSION, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
             'exaggeration': X, 'turbidity': TURBIDITY, 'top_km': TOP_M / 1000.0,
-            'transmittance': [TW, TH], 'multiscatter': [MW, MH],
-            'header': 'magic SRAT + float32[63]: X, rTop, hR, hM, ozC, ozW, bR(3), bMs, bMa, bO(3), g, TW, TH, MW, MH, albedo (units: Earth radii)'}
+            'transmittance': [TW, TH], 'multiscatter': [MW, MH], 'irradiance': [IW, 1, IMU0],
+            'header': 'magic SRAT + float32[63]: X, rTop, hR, hM, ozC, ozW, bR(3), bMs, bMa, bO(3), g, TW, TH, MW, MH, albedo, IW, IMU0 (units: Earth radii); tables T, M, I (sky irradiance, mu_s from IMU0 to 1)'}
     with open(os.path.join(OUT, 'meta.json'), 'w') as f:
         json.dump(meta, f, indent=1)
-    print('T min %.4g max %.4g | MS max %s | %.1fs' % (T.min(), T.max(), M.reshape(-1, 3).max(0), time.time() - t0))
+    print('T min %.4g max %.4g | MS max %s | Esky(1) %s Esky(0) %s | %.1fs' % (T.min(), T.max(), M.reshape(-1, 3).max(0), I[0, -1], I[0, int(-IMU0 / (1 - IMU0) * IW)], time.time() - t0))
 
 
 if __name__ == '__main__':

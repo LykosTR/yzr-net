@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.19-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.20-2E7D32)
 
 </div>
 
@@ -47,7 +47,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Ceres ve Pluto yüzey haritaları: Dawn FC ve New Horizons mozaikleri, gerçek ölçekli DEM'den normal haritası (8K/4K/2K WebP, `ceres/`, `pluto/`) | USGS Astrogeology, NASA/JPL/DLR (Dawn), NASA/JHUAPL/SwRI (New Horizons) | elle (`ceres`, `pluto` iş akışları) |
 | Io, Europa, Ganymede, Callisto, Mimas, Enceladus, Tethys, Rhea, Charon, Triton, Ariel, Umbriel, Titania, Oberon, Miranda yüzey haritaları: Galileo/Voyager, Cassini ve New Horizons küresel mozaikleri; görülmemiş yarıküreler cismin kendi görüntülenmiş arazisiyle doldurulmuştur; Uranüs uydularında Astra-Planetshine haritası, Voyager 2'nin büyük ölçekli parlaklığıyla birleştirilmiştir (8K/4K/2K WebP, `moons/`) | USGS Astrogeology, NASA/JPL (Galileo, Voyager), NASA/JPL/SSI (Cassini), DLR (Mimas), NASA/JHUAPL/SwRI (New Horizons) | elle (`moons` iş akışı) |
 | Diğer gök cisimlerinin renk haritaları (Jüpiter, Satürn ve halkası, Uranüs, Neptün, cüce gezegenler, Io, Europa, Ganymede, Callisto, Titan, Dione, Iapetus) ve asteroit kaya dokusu: sitenin önceki dokuları tek parça haritaya birleştirilmiş (8K/4K/2K WebP, `textures/<cisim>/`) | NASA/JPL ve ilgili görev ekipleri (önceki site dokuları, kaynak listesi `data/textures/tiles.json`) | elle (`textures` iş akışı) |
-| Dünya atmosferi: fiziksel tabanlı saçılma tabloları (geçirgenlik ve çoklu saçılma, Rayleigh + Mie + ozon; `atmosphere/earth.bin`); 2B ve 3B haritalarda gökyüzü, ufuk, alacakaranlık ve yer üstü pusu bu tablolardan hesaplanır | Hillaire (2020) ve Bruneton (2017) atmosfer modelleri, standart Dünya parametreleri | elle (`atmosphere` iş akışı) |
+| Dünya atmosferi: fiziksel tabanlı saçılma tabloları (geçirgenlik, çoklu saçılma ve gök ışınımı; Rayleigh + Mie + ozon; `atmosphere/earth.bin`); 2B ve 3B haritalarda gökyüzü, ufuk, alacakaranlık, yer üstü pusu ve gece-gündüz aydınlatması bu tablolardan hesaplanır | Hillaire (2020) ve Bruneton (2017) atmosfer modelleri, standart Dünya parametreleri | elle (`atmosphere` iş akışı) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
 ## 📡 Veri kaynakları
