@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.14-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.15-2E7D32)
 
 </div>
 
@@ -45,7 +45,7 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Venüs yüzey haritaları: sitenin önceki Magellan tabanlı renk haritası (kuzey yukarı çevrilmiş), ince ayrıntıları Magellan radar mozaiğinden (şerit izleri temizlenmiş) ve gerçek ölçekli Magellan topografyasından normal haritası (8K/4K/2K WebP, `venus/`) | USGS Astrogeology, NASA/JPL (Magellan) | elle (`venus` iş akışı) |
 | Mars yüzey haritaları: Viking renkli mozaiği ve gerçek ölçekli MOLA kabartmasından normal haritası (8K/4K/2K WebP, `mars/`) | USGS Astrogeology, NASA/JPL (Viking), NASA/GSFC (MGS MOLA) | elle (`mars` iş akışı) |
 | Ceres ve Pluto yüzey haritaları: Dawn FC ve New Horizons mozaikleri, gerçek ölçekli DEM'den normal haritası (8K/4K/2K WebP, `ceres/`, `pluto/`) | USGS Astrogeology, NASA/JPL/DLR (Dawn), NASA/JHUAPL/SwRI (New Horizons) | elle (`ceres`, `pluto` iş akışları) |
-| Io, Europa, Ganymede, Callisto, Mimas, Enceladus, Tethys, Rhea, Charon, Triton yüzey haritaları: Galileo/Voyager, Cassini ve New Horizons küresel mozaikleri; görülmemiş yarıküreler cismin kendi görüntülenmiş arazisiyle doldurulmuştur (8K/4K/2K WebP, `moons/`) | USGS Astrogeology, NASA/JPL (Galileo, Voyager), NASA/JPL/SSI (Cassini), DLR (Mimas), NASA/JHUAPL/SwRI (New Horizons) | elle (`moons` iş akışı) |
+| Io, Europa, Ganymede, Callisto, Mimas, Enceladus, Tethys, Rhea, Charon, Triton, Ariel, Umbriel, Titania, Oberon, Miranda yüzey haritaları: Galileo/Voyager, Cassini ve New Horizons küresel mozaikleri; görülmemiş yarıküreler cismin kendi görüntülenmiş arazisiyle doldurulmuştur; Uranüs uydularında Astra-Planetshine haritası, Voyager 2'nin büyük ölçekli parlaklığıyla birleştirilmiştir (8K/4K/2K WebP, `moons/`) | USGS Astrogeology, NASA/JPL (Galileo, Voyager), NASA/JPL/SSI (Cassini), DLR (Mimas), NASA/JHUAPL/SwRI (New Horizons) | elle (`moons` iş akışı) |
 | Diğer gök cisimlerinin renk haritaları (Jüpiter, Satürn ve halkası, Uranüs, Neptün, cüce gezegenler, Io, Europa, Ganymede, Callisto, Titan, Dione, Iapetus) ve asteroit kaya dokusu: sitenin önceki dokuları tek parça haritaya birleştirilmiş (8K/4K/2K WebP, `textures/<cisim>/`) | NASA/JPL ve ilgili görev ekipleri (önceki site dokuları, kaynak listesi `data/textures/tiles.json`) | elle (`textures` iş akışı) |
 | Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
@@ -71,6 +71,7 @@ Veri önce `data` dalından okunur; dosya yoksa ya da eskiyse ilgili servise do�
 | Mars yüzeyi | NASA/JPL (Viking), NASA/GSFC MOLA Science Team, USGS Astrogeology |
 | Ceres ve Pluto yüzeyi | NASA/JPL-Caltech/UCLA/MPS/DLR/IDA (Dawn), NASA/JHUAPL/SwRI (New Horizons), USGS Astrogeology |
 | Jüpiter ve Satürn uyduları | NASA/JPL (Galileo, Voyager), NASA/JPL-Caltech/Space Science Institute (Cassini), USGS Astrogeology |
+| Uranüs uyduları (Ariel, Umbriel, Titania, Oberon, Miranda) | NASA/JPL (Voyager 2), USGS Astrogeology, JPL Solar System Simulator; tam küre renk ve kabartma haritaları: [Astra-Planetshine, "Uranus Project Missing Data"](https://www.deviantart.com/astra-planetshine/art/Uranus-Project-Missing-Data-Titania-646920848) (sanatçının izniyle serbest kullanım, atıf ile) |
 | Hava durumu | Open-Meteo |
 
 ## 📜 Veri hakları

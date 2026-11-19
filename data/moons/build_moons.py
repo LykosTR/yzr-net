@@ -102,17 +102,23 @@ BODIES = {
                    source='USGS Astrogeology: Phobos Viking Global Mosaic 40 ppd (DLR control)'),
 }
 VOYU = 'NASA/JPL (Voyager 2), USGS Astrogeology (T. Becker), JPL Solar System Simulator'
-for _k, _i, _r, _m, _lut in (
-        ('ariel', 1, 578.9, 92, [(0, (84, 83, 81)), (0.5, (150, 148, 145)), (1, (214, 212, 208))]),
-        ('umbriel', 2, 584.7, 66, [(0, (52, 51, 50)), (0.5, (104, 102, 100)), (1, (168, 165, 162))]),
-        ('titania', 3, 788.9, 78, [(0, (72, 68, 64)), (0.5, (136, 129, 122)), (1, (204, 196, 188))]),
-        ('oberon', 4, 761.4, 72, [(0, (68, 62, 57)), (0.5, (130, 120, 111)), (1, (198, 188, 178))]),
-        ('miranda', 5, 235.8, 76, [(0, (72, 71, 70)), (0.5, (138, 136, 133)), (1, (206, 204, 200))])):
-    BODIES[_k] = dict(name=_k.capitalize(), disabled=True, radius_km=_r,   # disabled (s35): client keeps the rock pipeline (maps too blurry)
-                      grey='ura%dvuu2.tif' % _i, url='https://maps.jpl.nasa.gov/tmaps/pix/',
-                      old=False, mean=_m, centre=180, mode='lut', neutral=True, top=2, flip=True, rotfill=60, rim=40, pole_cut=72, credit=VOYU,
-                      lut=_lut, source='USGS Voyager 2 airbrush mosaic (southern hemisphere), JPL Solar System Simulator map %d/%s'
-                      % (_i, _k.capitalize()))
+ART_PACK = 'https://drive.usercontent.google.com/download?id=1rHyIo5zdNGlTeM7PeXabCYb2PC8eC0RO&export=download&confirm=t'
+for _k, _i, _r, _m, _rel, _lut in (
+        ('ariel', 1, 578.9, 92, 10, [(0, (84, 83, 81)), (0.5, (150, 149, 147)), (1, (214, 212, 208))]),
+        ('umbriel', 2, 584.7, 66, 10, [(0, (52, 51, 50)), (0.5, (104, 103, 101)), (1, (168, 165, 162))]),
+        ('titania', 3, 788.9, 78, 10, [(0, (72, 68, 64)), (0.5, (136, 132, 127)), (1, (204, 196, 188))]),
+        ('oberon', 4, 761.4, 72, 12, [(0, (68, 62, 57)), (0.5, (130, 125, 119)), (1, (198, 188, 178))]),
+        ('miranda', 5, 235.8, 76, 20, [(0, (72, 71, 70)), (0.5, (138, 137, 135)), (1, (206, 204, 200))])):
+    _A = {'umbriel': 'Umbirel'}.get(_k, _k.capitalize())             # (the pack's own spelling)
+    _x = '.Png' if _k == 'ariel' else '.png'
+    # s37: hybrid = Astra-Planetshine's full-globe map (sharp, unseen half painted) x the real Voyager large-scale albedo
+    BODIES[_k] = dict(name=_k.capitalize(), radius_km=_r, art=(ART_PACK, 'uranus_project_missing_data.zip'),
+                      art_color=_A + 'Colour' + _x, art_bump=_A + 'Bump' + _x, relief_km=_rel,
+                      grey='ura%dvuu2.tif' % _i, url='https://maps.jpl.nasa.gov/tmaps/pix/', last_col_bad=True,
+                      mean=_m, top=8, flip=True, rim=40, pole_cut=72, lut=_lut,
+                      credit='Astra-Planetshine (deviantart.com/astra-planetshine, "Uranus Project Missing Data"); ' + VOYU,
+                      source='Astra-Planetshine "Uranus Project Missing Data" colour + bump maps x USGS Voyager 2 airbrush mosaic '
+                             '(southern hemisphere), JPL Solar System Simulator map %d/%s' % (_i, _k.capitalize()))
 # all px at the top tier (8k); scaled with the working width
 MASK_COV, MASK_ERODE = 0.99, 5              # source pixel valid above this coverage; erosion drops the partial rim
 RAMP, PERT = 128, 48                        # gap fill ramp, starting 0..2*PERT px inside the data (wavy, no straight edge)
@@ -799,6 +805,122 @@ def build(key, cfg, raw, out_root, Wt=None):
     print('  %s done in %d s' % (key, time.time() - t0), flush=True)
 
 
+ART_SIG = 3.0                               # art hybrid: low-pass (deg) of the Voyager / art luminance ratio
+ART_W, ART_CLAMP = 0.8, (0.7, 1.4)          # art hybrid: weight of the Voyager large-scale structure, ratio clamp
+ART_SAT = 0.12                              # art hybrid: saturation kept from the artist's colour (Uranian moons are near-grey)
+ART_USM = (1.2, 0.55)                       # art hybrid: unsharp mask (sigma px at the top tier, amount) on the luminance
+
+
+def art_src(raw, cfg, member):
+    """member of the artist's pack (cfg['art'] = (zip url, local zip name)), extracted once into raw/"""
+    p = os.path.join(raw, os.path.basename(member))
+    if not os.path.exists(p):
+        import zipfile
+        z = src(os.path.dirname(raw), cfg['art'][1], cfg['art'][0])   # one pack for all bodies, in the raw root
+        with zipfile.ZipFile(z) as zf, zf.open(member) as r, open(p + '.part', 'wb') as f:
+            while True:
+                b = r.read(1 << 22)
+                if not b:
+                    break
+                f.write(b)
+        os.replace(p + '.part', p)
+    return p
+
+
+def build_art(key, cfg, raw, out_root, Wt=None):
+    """artist's full-globe map (sharp detail, plausible unseen hemisphere) x the real Voyager large-scale albedo where
+    imaged; relief = the artist's bump map, true scale (cfg['relief_km'] = height span of the bump range)"""
+    t0 = time.time()
+    rawk = os.path.join(raw, key); os.makedirs(rawk, exist_ok=True)
+    out = os.path.join(out_root, key); os.makedirs(out, exist_ok=True)
+    top = cfg['top']
+    W, H = (Wt, Wt // 2) if Wt else SIZES[top]
+    f = W / SIZES[top][0]
+    print('== art', key, W, 'x', H, flush=True)
+    # orientation: the artist's maps are the Voyager/JPL map turned 180 deg (NCC peak at 0 shift for all five); the
+    # JPL map goes through the s34 chain (centre 180 roll, flip) -> the artist's map needs only the half-width roll
+    A = np.asarray(Image.open(art_src(rawk, cfg, cfg['art_color'])).convert('RGB'))
+    up = W / A.shape[1]                                               # > 1: the colour source is coarser than the tier
+    A = cv2.resize(A, (W, H), interpolation=cv2.INTER_AREA if A.shape[1] >= W else cv2.INTER_LANCZOS4).astype(np.float32)
+    A = np.roll(A, W // 2, 1)
+    La = np.maximum(luma(A), 1.0)
+    lat_r = 90 - (np.arange(H) + 0.5) * 180 / H
+    # --- real large-scale structure: low-passed Voyager / art luminance ratio over the imaged area ---------------------
+    v, cov = area(tiff_map(fetch(rawk, cfg, 'grey')), W, H)
+    G = v[0]; del v
+    if cfg.get('last_col_bad'):
+        cov[:, -max(1, int(W / 1440 + 0.5)) * 2:] = 0
+    G, cov = np.roll(G, W // 2, 1), np.roll(cov, W // 2, 1)
+    if cfg.get('flip'):
+        G, cov = np.ascontiguousarray(G[::-1, ::-1]), np.ascontiguousarray(cov[::-1, ::-1])
+    M = cv2.erode(((cov > MASK_COV) & (G > 8)).astype(np.uint8), np.ones((MASK_ERODE, MASK_ERODE), np.uint8)).astype(np.float32)
+    M = (M * (dist(M > 0) > cfg.get('rim', 40) * f)).astype(np.float32)
+    M *= (np.abs(lat_r) <= cfg.get('pole_cut', 72))[:, None]
+    s = ART_SIG / 360 * W
+    R = nblur(G, M, s) / np.maximum(nblur(La, M, s), 1.0)
+    R /= float(np.median(R[M > 0]))
+    R = np.clip(R, *ART_CLAMP)
+    wR = ART_W * blur(M, s) * smooth((60 - np.abs(lat_r)) / 8)[:, None]   # fades out before the airbrush polar smear
+    R = 1 + wR * (R - 1)
+    print('  voyager ratio: imaged %.3f, ratio p5/p95 %.3f / %.3f' % (float(M.mean()), *np.percentile(R[M > 0], [5, 95])), flush=True)
+    del G, cov
+    # --- colour: artist's chroma desaturated, measured tint, luminance mean from the albedo ---------------------------
+    L = La * R
+    # sharpen: unsharp mask on the luminance (the painted bump is NOT used here: its 8-bit terraces became contour lines)
+    L = L + ART_USM[1] * (L - blur(L, ART_USM[0] * max(up, 1.0)))
+    L = np.maximum(L, 0.5)
+    Cr = 1 + ART_SAT * (A / La[..., None] - 1)
+    del A, R
+    col = L[..., None] * Cr
+    tg = np.array(lut(np.array([[0.5]], np.float32), cfg['lut'])[0, 0], np.float32)
+    col *= tg / float(luma(tg[None])[0])
+    col *= float(cfg['mean']) / max(float(luma(col).mean()), 1e-3)
+    T = KNEE * 255
+    col = np.where(col > T, T + (255 - T) * (1 - np.exp(-(col - T) / (255 - T))), col)
+    col[..., 2] = np.minimum(col[..., 2], np.maximum(col[..., 0], col[..., 1]))
+    c8 = np.clip(np.rint(col), 0, 255).astype(np.uint8)
+    del col, L, Cr, La
+    # --- relief: artist's bump, true scale --------------------------------------------------------------------------------
+    B = np.asarray(Image.open(art_src(rawk, cfg, cfg['art_bump'])).convert('L'))
+    B = cv2.resize(B, (W, H), interpolation=cv2.INTER_AREA if B.shape[1] >= W else cv2.INTER_CUBIC).astype(np.float32)
+    B = blur(np.roll(B, W // 2, 1), 1.6 * W / 8192)                     # 8-bit terraces (contour steps) of the painted bump
+    lo, hi = np.percentile(B, [0.5, 99.5])
+    hgt = (B - lo) / max(hi - lo, 1.0) * cfg['relief_km']
+    del B
+    Rk = cfg['radius_km']
+    dl, dp = 2 * np.pi / W, np.pi / H
+    cl = np.maximum(np.cos(np.radians(lat_r)), 0.02)[:, None]
+    hx = (np.roll(hgt, -1, 1) - np.roll(hgt, 1, 1)) / (2 * Rk * cl * dl)
+    up, dn = np.vstack([hgt[:1], hgt[:-1]]), np.vstack([hgt[1:], hgt[-1:]])
+    hy = (up - dn) / (2 * Rk * dp)
+    del hgt, up, dn
+    pw = smooth((np.abs(lat_r) - 84) / 5)[:, None]                    # last deg: equirect gradients are unreliable
+    hx, hy = hx * (1 - pw), hy * (1 - pw)
+    n = np.dstack([-hx, -hy, np.ones_like(hx)]).astype(np.float32)
+    n /= np.linalg.norm(n, axis=2, keepdims=True)
+    n8 = np.clip(np.rint((n * 0.5 + 0.5) * 255), 0, 255).astype(np.uint8)
+    print('  relief: slope rms %.3f' % float(np.sqrt((hx * hx + hy * hy).mean())), flush=True)
+    del n, hx, hy
+    files = []
+    for kk, (w, hh) in SIZES.items():
+        if (Wt is None and kk > top) or (Wt and w > W):
+            continue
+        cc = c8 if w == W else cv2.resize(c8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_color_%dk.webp' % (key, kk); webp(cc, os.path.join(out, nm), 90); files.append(nm)
+        nn = n8 if w == W else cv2.resize(n8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_normal_%dk.webp' % (key, kk); webp(nn, os.path.join(out, nm), 92); files.append(nm)
+    meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': Rk,
+            'projection': 'equirectangular, east to the right; ROTATED 180 deg about the sub-planet axis (south up: the client '
+                          'mesh +Y is the IAU south pole of this retrograde moon); lon 0 at the centre', 'max_tier': '%dk' % top,
+            'normal': 'tangent space (x east, y north of the image), true scale from the artist\'s bump map, height span %g km' % cfg['relief_km'],
+            'colour': 'artist\'s full-globe map (saturation x%g, measured tint, luminance mean %g from the albedo) x the low-passed '
+                      '(%g deg) Voyager / artist luminance ratio over the imaged southern hemisphere (weight %g, clamp %s); unsharp mask %s'
+                      % (ART_SAT, cfg['mean'], ART_SIG, ART_W, ART_CLAMP, ART_USM),
+            'files': sorted(files), 'source': cfg['source'], 'credit': cfg['credit']}
+    json.dump(meta, open(os.path.join(out, 'meta.json'), 'w'), indent=1)
+    print('  %s done in %d s' % (key, time.time() - t0), flush=True)
+
+
 def rot_fill(L, M, rgb, lat_max, f):
     """unseen hemisphere (Voyager / New Horizons saw one side): filled with the body's OWN imaged terrain seen through
     rotations of the sphere about the lon +-90 axis (180 deg first: (lat, lon) -> (-lat, 180 - lon); then +-90 deg, which
@@ -960,7 +1082,7 @@ def main():
     Wt = int(opt['size']) if 'size' in opt else None
     t0 = time.time()
     for k in keys:
-        build(k, BODIES[k], raw, out, Wt)
+        (build_art if BODIES[k].get('art') else build)(k, BODIES[k], raw, out, Wt)
     print('done in', round(time.time() - t0), 's')
 
 
