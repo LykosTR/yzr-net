@@ -119,6 +119,14 @@ for _k, _i, _r, _m, _rel, _lut in (
                       credit='Astra-Planetshine (deviantart.com/astra-planetshine, "Uranus Project Missing Data"); ' + VOYU,
                       source='Astra-Planetshine "Uranus Project Missing Data" colour + bump maps x USGS Voyager 2 airbrush mosaic '
                              '(southern hemisphere), JPL Solar System Simulator map %d/%s' % (_i, _k.capitalize()))
+# s37: Gonggong / Sedna -- no spacecraft image: illustrative globes (a Uranian moon's terrain rotated + recoloured)
+_ILL = 'Astra-Planetshine (deviantart.com/astra-planetshine, "Uranus Project Missing Data"), recoloured; colours: published TNO photometry'
+BODIES['gonggong'] = dict(name='Gonggong', tno=True, terrain='umbriel', rot=(63, 141, -38), seed=11, radius_km=615, top=8, mean=58,
+                          contrast=1.25, relief_km=10, rgb=(0.54, 0.33, 0.25), rgb2=(0.58, 0.44, 0.38), credit=_ILL,
+                          source='ILLUSTRATIVE: Umbriel terrain (artist map) rotated, recoloured to Gonggong (very red, geometric albedo 0.14)')
+BODIES['sedna'] = dict(name='Sedna', tno=True, terrain='ariel', rot=(-112, 37, 74), seed=23, radius_km=497, top=8, mean=92,
+                       contrast=0.85, relief_km=8, rgb=(0.70, 0.45, 0.35), rgb2=(0.64, 0.36, 0.25), credit=_ILL,
+                       source='ILLUSTRATIVE: Ariel terrain (artist map) rotated, recoloured to Sedna (deep red, geometric albedo 0.32)')
 # all px at the top tier (8k); scaled with the working width
 MASK_COV, MASK_ERODE = 0.99, 5              # source pixel valid above this coverage; erosion drops the partial rim
 RAMP, PERT = 128, 48                        # gap fill ramp, starting 0..2*PERT px inside the data (wavy, no straight edge)
@@ -921,6 +929,101 @@ def build_art(key, cfg, raw, out_root, Wt=None):
     print('  %s done in %d s' % (key, time.time() - t0), flush=True)
 
 
+def sphere_rotate(img, Rm, chunk=256):
+    """equirectangular field (H, W[, C]) seen through a rotation of the sphere: out(d) = img(Rm^T d)"""
+    H, W = img.shape[:2]
+    p = 4
+    src_ = np.concatenate([img[:, -p:], img, img[:, :p]], 1).astype(np.float32)
+    out = np.empty(img.shape, np.float32)
+    lon = (np.arange(W) + 0.5) / W * 2 * np.pi - np.pi
+    for r0 in range(0, H, chunk):
+        la = np.radians(90 - (np.arange(r0, min(H, r0 + chunk)) + 0.5) * 180 / H)[:, None]
+        d = np.stack([np.cos(la) * np.sin(lon), np.broadcast_to(np.sin(la), (la.shape[0], W)), np.cos(la) * np.cos(lon)], -1)
+        s = d @ Rm                                                    # = (Rm^T d) per pixel
+        sl = np.degrees(np.arcsin(np.clip(s[..., 1], -1, 1)))
+        so = np.arctan2(s[..., 0], s[..., 2])
+        px = ((so + np.pi) / (2 * np.pi) * W - 0.5 + p).astype(np.float32)
+        py = ((90 - sl) / 180 * H - 0.5).astype(np.float32)
+        out[r0:r0 + la.shape[0]] = cv2.remap(src_, px, py, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
+    return out
+
+
+def build_tno(key, cfg, raw, out_root, Wt=None):
+    """no spacecraft image exists (Gonggong, Sedna): an ILLUSTRATIVE globe -- a Uranian moon's full-globe terrain from the
+    artist's pack (colour detail + bump) seen through a random rotation of the sphere, recoloured to the body's measured
+    colour / albedo with large soft colour provinces"""
+    t0 = time.time()
+    sc = BODIES[cfg['terrain']]
+    rawk = os.path.join(raw, cfg['terrain']); os.makedirs(rawk, exist_ok=True)
+    out = os.path.join(out_root, key); os.makedirs(out, exist_ok=True)
+    top = cfg['top']
+    W, H = (Wt, Wt // 2) if Wt else SIZES[top]
+    print('== tno', key, 'from', cfg['terrain'], W, 'x', H, flush=True)
+    a = np.radians(cfg['rot'])
+    Rx = np.array([[1, 0, 0], [0, np.cos(a[0]), -np.sin(a[0])], [0, np.sin(a[0]), np.cos(a[0])]])
+    Ry = np.array([[np.cos(a[1]), 0, np.sin(a[1])], [0, 1, 0], [-np.sin(a[1]), 0, np.cos(a[1])]])
+    Rz = np.array([[np.cos(a[2]), -np.sin(a[2]), 0], [np.sin(a[2]), np.cos(a[2]), 0], [0, 0, 1]])
+    Rm = Rz @ Ry @ Rx
+    lat_r = 90 - (np.arange(H) + 0.5) * 180 / H
+    # --- luminance detail ------------------------------------------------------------------------------------------------
+    A = np.asarray(Image.open(art_src(rawk, sc, sc['art_color'])).convert('RGB'))
+    up = W / A.shape[1]
+    L = luma(cv2.resize(A, (W, H), interpolation=cv2.INTER_AREA if up <= 1 else cv2.INTER_LANCZOS4).astype(np.float32))
+    del A
+    L = sphere_rotate(L, Rm)
+    L = L + ART_USM[1] * (L - blur(L, ART_USM[0] * max(up, 1.0)))
+    L = np.maximum(L, 1.0) / float(np.mean(L))
+    L = L ** cfg.get('contrast', 1.0)
+    # --- colour: measured colour, soft provinces (one sphere-noise octave, ~1/7 of the circumference) --------------------------------
+    N = sphere_noise(H, W, [W / 7.0], cfg.get('seed', 7))
+    wv = (0.7 * smooth((N * 0.5 + 0.5 - 0.15) / 0.7))[..., None].astype(np.float32)
+    c0, c1 = np.array(cfg['rgb'], np.float32), np.array(cfg['rgb2'], np.float32)
+    col = L[..., None] * (c0 * (1 - wv) + c1 * wv) * (1 + 0.08 * N[..., None])
+    del N, wv, L
+    col *= float(cfg['mean']) / max(float(luma(col).mean()), 1e-3)
+    T = KNEE * 255
+    col = np.where(col > T, T + (255 - T) * (1 - np.exp(-(col - T) / (255 - T))), col)
+    c8 = np.clip(np.rint(col), 0, 255).astype(np.uint8)
+    del col
+    # --- relief: the artist's bump through the same rotation, true scale --------------------------------------------------
+    B = np.asarray(Image.open(art_src(rawk, sc, sc['art_bump'])).convert('L'))
+    B = cv2.resize(B, (W, H), interpolation=cv2.INTER_AREA if B.shape[1] >= W else cv2.INTER_CUBIC).astype(np.float32)
+    B = sphere_rotate(blur(B, 1.6 * W / 8192), Rm)
+    lo, hi = np.percentile(B, [0.5, 99.5])
+    hgt = (B - lo) / max(hi - lo, 1.0) * cfg['relief_km']
+    del B
+    Rk = cfg['radius_km']
+    dl, dp = 2 * np.pi / W, np.pi / H
+    cl = np.maximum(np.cos(np.radians(lat_r)), 0.02)[:, None]
+    hx = (np.roll(hgt, -1, 1) - np.roll(hgt, 1, 1)) / (2 * Rk * cl * dl)
+    up_, dn = np.vstack([hgt[:1], hgt[:-1]]), np.vstack([hgt[1:], hgt[-1:]])
+    hy = (up_ - dn) / (2 * Rk * dp)
+    del hgt, up_, dn
+    pw = smooth((np.abs(lat_r) - 84) / 5)[:, None]
+    hx, hy = hx * (1 - pw), hy * (1 - pw)
+    n = np.dstack([-hx, -hy, np.ones_like(hx)]).astype(np.float32)
+    n /= np.linalg.norm(n, axis=2, keepdims=True)
+    n8 = np.clip(np.rint((n * 0.5 + 0.5) * 255), 0, 255).astype(np.uint8)
+    del n, hx, hy
+    files = []
+    for kk, (w, hh) in SIZES.items():
+        if (Wt is None and kk > top) or (Wt and w > W):
+            continue
+        cc = c8 if w == W else cv2.resize(c8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_color_%dk.webp' % (key, kk); webp(cc, os.path.join(out, nm), 90); files.append(nm)
+        nn = n8 if w == W else cv2.resize(n8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_normal_%dk.webp' % (key, kk); webp(nn, os.path.join(out, nm), 92); files.append(nm)
+    meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': Rk,
+            'projection': 'equirectangular, north up, east to the right', 'max_tier': '%dk' % top,
+            'ILLUSTRATIVE': 'no spacecraft image of %s exists: the terrain is %s\'s (artist\'s full-globe map) rotated by %s deg, '
+                            'recoloured to the measured colour / albedo' % (cfg['name'], sc['name'], cfg['rot']),
+            'normal': 'tangent space (x east, y north), true scale from the artist\'s bump map, height span %g km' % cfg['relief_km'],
+            'colour': 'measured colour %s with provinces %s, luminance mean %g' % (cfg['rgb'], cfg['rgb2'], cfg['mean']),
+            'files': sorted(files), 'source': cfg['source'], 'credit': cfg['credit']}
+    json.dump(meta, open(os.path.join(out, 'meta.json'), 'w'), indent=1)
+    print('  %s done in %d s' % (key, time.time() - t0), flush=True)
+
+
 def rot_fill(L, M, rgb, lat_max, f):
     """unseen hemisphere (Voyager / New Horizons saw one side): filled with the body's OWN imaged terrain seen through
     rotations of the sphere about the lon +-90 axis (180 deg first: (lat, lon) -> (-lat, 180 - lon); then +-90 deg, which
@@ -1082,7 +1185,7 @@ def main():
     Wt = int(opt['size']) if 'size' in opt else None
     t0 = time.time()
     for k in keys:
-        (build_art if BODIES[k].get('art') else build)(k, BODIES[k], raw, out, Wt)
+        (build_tno if BODIES[k].get('tno') else build_art if BODIES[k].get('art') else build)(k, BODIES[k], raw, out, Wt)
     print('done in', round(time.time() - t0), 's')
 
 

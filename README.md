@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.15-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.16-2E7D32)
 
 </div>
 
@@ -72,6 +72,7 @@ Veri önce `data` dalından okunur; dosya yoksa ya da eskiyse ilgili servise do�
 | Ceres ve Pluto yüzeyi | NASA/JPL-Caltech/UCLA/MPS/DLR/IDA (Dawn), NASA/JHUAPL/SwRI (New Horizons), USGS Astrogeology |
 | Jüpiter ve Satürn uyduları | NASA/JPL (Galileo, Voyager), NASA/JPL-Caltech/Space Science Institute (Cassini), USGS Astrogeology |
 | Uranüs uyduları (Ariel, Umbriel, Titania, Oberon, Miranda) | NASA/JPL (Voyager 2), USGS Astrogeology, JPL Solar System Simulator; tam küre renk ve kabartma haritaları: [Astra-Planetshine, "Uranus Project Missing Data"](https://www.deviantart.com/astra-planetshine/art/Uranus-Project-Missing-Data-Titania-646920848) (sanatçının izniyle serbest kullanım, atıf ile) |
+| Gonggong ve Sedna (temsilî) | Hiçbir uzay aracı görüntülemediği için temsilî küreler: Astra-Planetshine arazisi döndürülüp ölçülmüş renk ve albedoya göre yeniden renklendirilmiştir |
 | Hava durumu | Open-Meteo |
 
 ## 📜 Veri hakları
