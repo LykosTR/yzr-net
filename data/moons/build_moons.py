@@ -27,6 +27,7 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
 USGS = 'https://planetarymaps.usgs.gov/mosaic/'
+S3 = 'https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/'   # bucket behind USGS (zips, sub-folders)
 OLD = 'https://raw.githubusercontent.com/LykosTR/yzr-net/data/textures/%s/%s_color_4k.webp'   # previous site maps
 HERE = os.path.dirname(os.path.abspath(__file__))
 SIZES = {8: (8192, 4096), 4: (4096, 2048), 2: (2048, 1024)}
@@ -66,7 +67,50 @@ BODIES = {
                     mode='lut', neutral=True, pole_flat=75, top=8, credit=CASSINI,
                     lut=[(0, (48, 36, 28)), (0.25, (86, 64, 48)), (0.5, (160, 148, 132)), (1, (232, 228, 220))],
                     source='USGS Astrogeology: Iapetus Cassini / Voyager Global Mosaic 783 m'),
+    # ---- catalogue moons (no previous site map: USGS orientation, exposure from the measured geometric albedo) ----
+    'mimas': dict(name='Mimas', radius_km=198.2, grey='MI_170630_DLR_basemap_degrees.tif', old=False, mean=128,
+                  zip=(S3 + 'Mimas/Cassini_DLR_Mimas.zip', 'Cassini_DLR/MI_170630_DLR_basemap_degrees.tif'), centre=0,
+                  mode='lut', neutral=True, top=4,
+                  credit='NASA/JPL/Space Science Institute (Cassini ISS), DLR (Roatsch et al.), USGS Astrogeology',
+                  lut=[(0, (112, 110, 106)), (0.5, (180, 178, 174)), (1, (234, 233, 230))],
+                  source='DLR Cassini ISS Mimas global basemap (June 2017), USGS Astrogeology mosaic archive'),
+    'enceladus': dict(name='Enceladus', radius_km=252.1, grey='Enceladus_Cassini_ISS_Global_Mosaic_100m_HPF.tif', old=False,
+                      mean=176, centre=0, mode='lut', top=8, credit=CASSINI,
+                      lut=[(0, (156, 162, 166)), (0.5, (212, 218, 222)), (1, (246, 249, 252))],
+                      source='USGS Astrogeology: Enceladus Cassini ISS Global Mosaic 100 m (high-pass filtered)'),
+    'tethys': dict(name='Tethys', radius_km=531.1, grey='Tethys_Cassini_mosaic_global_293m.tif', old=False, mean=150, centre=0,
+                   mode='lut', neutral=True, top=8, credit=CASSINI,
+                   lut=[(0, (128, 126, 122)), (0.5, (192, 190, 186)), (1, (240, 239, 236))],
+                   source='USGS Astrogeology: Tethys Cassini Global Mosaic 293 m'),
+    'rhea': dict(name='Rhea', radius_km=763.8, grey='Rhea_Cassini_Voyager_mosaic_global_417m.tif', old=False, mean=124, centre=0,
+                 mode='lut', neutral=True, top=8, credit=CASSINI,
+                 lut=[(0, (116, 113, 108)), (0.5, (184, 181, 176)), (1, (236, 234, 230))],
+                 source='USGS Astrogeology: Rhea Cassini / Voyager Global Mosaic 417 m'),
+    'charon': dict(name='Charon', radius_km=606.0, grey='Charon_NewHorizons_Global_Mosaic_300m_Jul2017_8bit.tif', old=False,
+                   mean=117, centre=180, mode='lut', neutral=True, top=8, rotfill=50, cap_tint=(68, 80, (128, 100, 88)),
+                   credit='NASA/JHUAPL/SwRI (New Horizons LORRI / MVIC), USGS Astrogeology',
+                   lut=[(0, (72, 70, 68)), (0.5, (142, 139, 134)), (1, (212, 208, 202))],
+                   source='USGS Astrogeology: Charon New Horizons LORRI / MVIC Global Mosaic 300 m (July 2017)'),
+    'triton': dict(name='Triton', radius_km=1353.4, color='Triton_Voyager2_ClrMosaic_GlobalFill_600m.tif', old=False, mean=124,
+                   centre=0, mode='own', sat=0.15, neutral=True, top=4, flip=True, rotfill=60, mask_smooth=0.03, rim=24, tint=(236, 214, 200),
+                   credit='NASA/JPL (Voyager 2), USGS Astrogeology',
+                   source='USGS Astrogeology: Triton Voyager 2 Global Color Mosaic 600 m'),
+    'phobos': dict(name='Phobos', radius_km=11.1, grey='Phobos_Viking_Mosaic_40ppd_DLRcontrol.tif', old=False, mean=66, centre=0,
+                   mode='lut', neutral=True, top=4, nonormal=True, credit='NASA/JPL (Viking Orbiter), DLR, USGS Astrogeology',
+                   lut=[(0, (62, 56, 52)), (0.5, (120, 110, 102)), (1, (182, 172, 162))],
+                   source='USGS Astrogeology: Phobos Viking Global Mosaic 40 ppd (DLR control)'),
 }
+VOYU = 'NASA/JPL (Voyager 2), USGS Astrogeology (T. Becker), JPL Solar System Simulator'
+for _k, _i, _r, _m, _lut in (
+        ('ariel', 1, 578.9, 92, [(0, (84, 83, 81)), (0.5, (150, 148, 145)), (1, (214, 212, 208))]),
+        ('umbriel', 2, 584.7, 66, [(0, (52, 51, 50)), (0.5, (104, 102, 100)), (1, (168, 165, 162))]),
+        ('titania', 3, 788.9, 78, [(0, (72, 68, 64)), (0.5, (136, 129, 122)), (1, (204, 196, 188))]),
+        ('oberon', 4, 761.4, 72, [(0, (68, 62, 57)), (0.5, (130, 120, 111)), (1, (198, 188, 178))]),
+        ('miranda', 5, 235.8, 76, [(0, (72, 71, 70)), (0.5, (138, 136, 133)), (1, (206, 204, 200))])):
+    BODIES[_k] = dict(name=_k.capitalize(), radius_km=_r, grey='ura%dvuu2.tif' % _i, url='https://maps.jpl.nasa.gov/tmaps/pix/',
+                      old=False, mean=_m, centre=180, mode='lut', neutral=True, top=2, flip=True, rotfill=60, rim=40, pole_cut=72, credit=VOYU,
+                      lut=_lut, source='USGS Voyager 2 airbrush mosaic (southern hemisphere), JPL Solar System Simulator map %d/%s'
+                      % (_i, _k.capitalize()))
 # all px at the top tier (8k); scaled with the working width
 MASK_COV, MASK_ERODE = 0.99, 5              # source pixel valid above this coverage; erosion drops the partial rim
 RAMP, PERT = 128, 48                        # gap fill ramp, starting 0..2*PERT px inside the data (wavy, no straight edge)
@@ -82,6 +126,28 @@ DETAIL_W = 0.8                              # old-map base: mission detail weigh
 CHROMA_SAT = 0.5                            # Ganymede: colour-mosaic chroma gain (its frames carry per-frame tints)
 KNEE = 0.9                                  # soft highlight knee (fraction of 255)
 POLE_ROWS = 6
+RAMP_ROT = 48                               # rotation fill seam (px at the top tier)
+SIG_ROT = 48                                # rotation fill: detail band below this scale (px at the top tier)
+
+
+def fetch(raw, cfg, field):
+    """source file named cfg[field]: from cfg['zip'] = (url, member) when given, else cfg['url'] + name, else USGS"""
+    name = cfg[field]
+    p = os.path.join(raw, name)
+    if os.path.exists(p):
+        return p
+    if cfg.get('zip'):
+        import zipfile
+        z = src(raw, os.path.basename(cfg['zip'][0]), cfg['zip'][0])
+        with zipfile.ZipFile(z) as zf, zf.open(cfg['zip'][1]) as r, open(p + '.part', 'wb') as f:
+            while True:
+                b = r.read(1 << 22)
+                if not b:
+                    break
+                f.write(b)
+        os.replace(p + '.part', p)
+        return p
+    return src(raw, name, cfg['url'] + name if cfg.get('url') else None)
 
 
 def src(raw, name, url=None):
@@ -110,6 +176,11 @@ def tiff_map(path):
     t = im.tag_v2
     W, H = im.size
     spp, planar = t.get(277, 1), t.get(284, 1)
+    if t.get(259, 1) != 1 and W * H * spp <= 64 << 20:              # small compressed TIFF (JPL Uranian maps): decode fully
+        a = np.array(im.convert('RGB' if spp >= 3 else 'L'))
+        im.close()
+        a[:, -1] = a[:, -2]                                           # JPL maps: the last column is a dark seam
+        return a[None] if a.ndim == 2 else a.transpose(2, 0, 1)
     off, cnt = np.asarray(t[273], np.int64), np.asarray(t[279], np.int64)
     assert t.get(259, 1) == 1 and all(b == 8 for b in np.atleast_1d(t.get(258))), 'TIFF not 8-bit uncompressed'
     assert np.all(off[1:] == off[:-1] + cnt[:-1]) and cnt.sum() == W * H * spp, 'TIFF strips not contiguous'
@@ -386,6 +457,18 @@ def wrapfix(x, m, n=64):
     return x
 
 
+def iso_blur(x, s, lat_r, lat0=50.0):
+    """Gaussian blur that stays isotropic on the sphere: equirectangular blur at low latitudes, the caps blurred in an
+    azimuthal grid (a lat/lon blur averages along the parallels near a pole and leaves a star pattern there)"""
+    H, W = x.shape
+    n = int(2048 * W / 8192) // 2 * 2 or 512
+    n = max(n, 512)
+    sg = s * (360.0 / W) / (2 * (90 - lat0) / n)                     # sigma in azimuthal-grid px
+    P = polar(x, lambda P, E, r: cv2.GaussianBlur(P, (0, 0), sg), n=n, lat0=lat0, blend=(lat0 + 3, lat0 + 13))
+    w = smooth((np.abs(lat_r) - (lat0 + 3)) / 10.0)[:, None].astype(np.float32)
+    return blur(x, s) * (1 - w) + P * w
+
+
 def lut(n, stops):
     xs = np.array([s[0] for s in stops], np.float32)
     ys = np.array([s[1] for s in stops], np.float32)
@@ -405,26 +488,51 @@ def build(key, cfg, raw, out_root, Wt=None):
     # --- luminance, mask, own colour -------------------------------------------------------------------------------
     rgb = None
     if cfg['mode'] == 'own':
-        v, cov = area(tiff_map(src(rawk, cfg['color'])), W, H)
+        v, cov = area(tiff_map(fetch(rawk, cfg, 'color')), W, H)
         for c in range(3):
             v[c] = wrapfix(v[c], cov > MASK_COV)
         rgb = np.roll(np.ascontiguousarray(v.transpose(1, 2, 0)), roll0, 1)
         L = luma(rgb)
     else:
-        v, cov = area(tiff_map(src(rawk, cfg['grey'])), W, H)
+        v, cov = area(tiff_map(fetch(rawk, cfg, 'grey')), W, H)
         L = np.roll(wrapfix(v[0], cov > MASK_COV), roll0, 1)
     del v
     cov = np.roll(cov, roll0, 1)
     M = cv2.erode((cov > MASK_COV).astype(np.uint8), np.ones((MASK_ERODE, MASK_ERODE), np.uint8)).astype(np.float32)
     del cov
     print('  gap fraction %.3f' % (1 - M.mean()), flush=True)
-    O = np.array(Image.open(src(rawk, key + '_old_color_4k.webp', OLD % (key, key))).convert('RGB'), np.float32)
+    if cfg.get('flip'):
+        # retrograde orbit (Triton, the Uranian moons): the client's mesh +Y is the orbit normal = the IAU SOUTH pole. The
+        # map is turned 180 deg about the sub-planet axis (lat -> -lat, lon -> -lon), so lon 0 still faces the planet
+        L, M = np.ascontiguousarray(L[::-1, ::-1]), np.ascontiguousarray(M[::-1, ::-1])
+        if rgb is not None:
+            rgb = np.ascontiguousarray(rgb[::-1, ::-1])
+    rot_txt = ''
+    Mdat = None
+    if cfg.get('pole_cut'):                                           # radially smeared polar source (airbrush maps): refilled
+        latc = 90 - (np.arange(H) + 0.5) * 180 / H
+        M = (M * (np.abs(latc) <= cfg['pole_cut'])[:, None]).astype(np.float32)
+    if cfg.get('rim'):                                                # dark terminator fringe along the imaged area: dropped
+        M = (M * (dist(M > 0) > cfg['rim'] * f)).astype(np.float32)
+    if cfg.get('mask_smooth'):
+        M = smooth_mask(L, M, cfg['mask_smooth'], f)
+    if cfg.get('rotfill'):
+        Mdat = M
+        L, M, rgb, rot_txt = rot_fill(L, M, rgb, cfg['rotfill'], f)
+    if cfg.get('old', True):
+        O = np.array(Image.open(src(rawk, key + '_old_color_4k.webp', OLD % (key, key))).convert('RGB'), np.float32)
+    else:
+        O = None
 
     # --- alignment to the previous site map ------------------------------------------------------------------------
-    al = align(L, M, O)
-    al['applied'] = al['ncc'] >= NCC_MIN
-    shift = al['shift_px'] if al['applied'] else 0
-    if not al['applied']:
+    if O is None:
+        al = {'applied': False, 'ncc': None, 'note': 'no previous site map: USGS orientation (lon 0 at the centre)'}
+        shift = 0
+    else:
+        al = align(L, M, O)
+        al['applied'] = al['ncc'] >= NCC_MIN
+        shift = al['shift_px'] if al['applied'] else 0
+    if O is not None and not al['applied']:
         # an artistic previous map (blurred, re-tinted) fails the high-pass match but may still carry the same albedo
         # layout: its longitude (which the client rotation is tuned to) is then taken from a low-pass match -- for the
         # orientation only, never for the colour
@@ -459,7 +567,7 @@ def build(key, cfg, raw, out_root, Wt=None):
             Cr[..., c] = np.where(M > 0, Cr[..., c], pushpull(np.ascontiguousarray(Cr[..., c]), M))
         del rgb
     elif cfg['mode'] == 'chroma':
-        v, cc = area(tiff_map(src(rawk, cfg['color'])), W, H)
+        v, cc = area(tiff_map(fetch(rawk, cfg, 'color')), W, H)
         cm = (np.roll(cc, roll0, 1) > MASK_COV).astype(np.float32)
         v, cm = np.roll(v, roll0 + shift, 2), np.roll(cm, shift, 1)
         Yc = luma(v.transpose(1, 2, 0))
@@ -483,6 +591,8 @@ def build(key, cfg, raw, out_root, Wt=None):
     sd = np.sqrt(nblur(bp * bp, M, 64 * f))
     ms = float(np.median(sd[M > 0]))
     w6 = smooth((sd / ms - FLAT_LO) / (FLAT_HI - FLAT_LO)) * M
+    if Mdat is not None:                                              # baked lighting exists only in the imaged area
+        w6 = w6 * Mdat
     r = Lf / med
     flat = med * (1 + FLAT_K * np.tanh((r - 1) / FLAT_K))
     L = Lf + w6 * (flat - Lf)
@@ -504,6 +614,8 @@ def build(key, cfg, raw, out_root, Wt=None):
     ref = float(np.median(ev[ev >= np.percentile(ev, 75)]))
     del ev, sel
     Q = (smooth((e / ref - Q_LO) / (Q_HI - Q_LO)) * M).astype(np.float32)
+    if Mdat is not None:                                              # rotation-filled area: already clean detail; the lat/lon
+        Q = np.maximum(Q, blur(1 - Mdat, 4 * f + 0.5)).astype(np.float32)   # de-ringing medians would smear it radially at the poles
     del e
     if oldbase:
         c8, okf = old_base(O, L, M, Q, f, lat_r)
@@ -597,7 +709,7 @@ def build(key, cfg, raw, out_root, Wt=None):
         # --- colour --------------------------------------------------------------------------------------------------------
         L = np.maximum(L, 0.5)
         if cfg['mode'] == 'lut':
-            Ls = blur(L, SIG_LUT * f)
+            Ls = iso_blur(L, SIG_LUT * f, lat_r)
             valid = (M > 0) & (wfill < 0.5)
             lo, hi = np.percentile(Ls[valid], [1, 99.5])
             n = np.clip((Ls - lo) / max(hi - lo, 1e-3), 0, 1)
@@ -607,26 +719,34 @@ def build(key, cfg, raw, out_root, Wt=None):
             col = L[..., None] * Cr
             del Cr
         del L
+        if cfg.get('tint'):                                              # measured overall colour, luminance kept
+            tg = np.array(cfg['tint'], np.float32); col *= tg / float(luma(tg[None])[0])
+        if cfg.get('cap_tint'):                                          # known polar colour (Charon: Mordor Macula), luminance kept
+            la0, la1, tc = cfg['cap_tint']
+            tc = np.array(tc, np.float32); tc /= float(luma(tc[None])[0])
+            wc = smooth((lat_r - la0) / (la1 - la0))[:, None, None].astype(np.float32)
+            col *= 1 + wc * (tc - 1)
 
         # --- exposure: global luminance mean of the previous map; soft highlight knee; no blue cast -------------------------
         # a tone curve (power per channel), not a gain: a 2x brighter previous map must not blow the highlights out
-        Y, YO = luma(col), luma(O)
+        Y = luma(col)
+        YOm = float(luma(O).mean()) if O is not None else float(cfg['mean'])   # no previous map: target from the measured albedo
         cs = np.clip(col[::4, ::4], 0, 255) / 255
         if cfg.get('linear'):                                             # gamma-neutral: plain gain, the knee takes the top
             g = 1.0
         lo, hi = 0.2, 5.0
         for _ in range(0 if cfg.get('linear') else 40):
             g = (lo * hi) ** 0.5
-            if luma(cs ** g).mean() * 255 > YO.mean():
+            if luma(cs ** g).mean() * 255 > YOm:
                 lo = g
             else:
                 hi = g
         if cfg.get('linear') or g > 1:                                  # darkening: a plain gain (a power > 1 would
             g = 1.0                                                       # multiply every ripple / ringing contrast)
-            col *= float(YO.mean() / max(Y.mean(), 1e-3))
+            col *= float(YOm / max(Y.mean(), 1e-3))
         else:
             col = 255 * (np.clip(col, 0, 255) / 255) ** g
-        print('  luma mean new %.1f -> old %.1f (tone power %.3f)' % (Y.mean(), YO.mean(), g), flush=True)
+        print('  luma mean new %.1f -> target %.1f (tone power %.3f)' % (Y.mean(), YOm, g), flush=True)
         del Y, cs, O
         T = KNEE * 255
         col = np.where(col > T, T + (255 - T) * (1 - np.exp(-(col - T) / (255 - T))), col)
@@ -644,7 +764,8 @@ def build(key, cfg, raw, out_root, Wt=None):
                        'lut': 'natural-colour LUT on the low-passed luminance (sigma %d px) x detail ratio, stops %s' % (SIG_LUT, cfg.get('lut'))}[cfg['mode']] +
                       '; harsh terminator lighting soft-clamped to the local median; low-resolution areas de-ringed; gaps filled '
                       '(wavy ramp <= %d px, ring inpaint); polar caps de-rippled in an azimuthal grid; multiplicative sphere-noise '
-                      'grain (%g x local detail); luminance mean of the previous map (tone power %.3f); no blue cast' % (RAMP, GRAIN_GAP, g))
+                      'grain (%g x local detail); luminance mean %s (tone power %.3f); no blue cast' % (RAMP, GRAIN_GAP,
+                      'of the previous map' if cfg.get('old', True) else '%g (from the measured geometric albedo)' % cfg['mean'], g) + rot_txt)
     if os.environ.get('MOONS_DEBUG'):                                # diagnostics (Q, mask, fill weight) outside the feed
         np.save(os.path.join(os.environ['MOONS_DEBUG'], key + '_q.npy'),
                 cv2.resize(np.dstack([Q, M, wfill]), (2048, 1024), interpolation=cv2.INTER_AREA).astype(np.float16))
@@ -659,18 +780,97 @@ def build(key, cfg, raw, out_root, Wt=None):
         cc = c8 if w == W else cv2.resize(c8, (w, hh), interpolation=cv2.INTER_AREA)
         nm = '%s_color_%dk.webp' % (key, kk)
         webp(cc, os.path.join(out, nm), 90); files.append(nm)
+        if cfg.get('nonormal'):                                     # shape-model body: relief is in the mesh
+            continue
         nm = '%s_normal_%dk.webp' % (key, kk)
         webp(np.full((hh, w, 3), (128, 128, 255), np.uint8), os.path.join(out, nm), 92); files.append(nm)
     meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': cfg['radius_km'],
-            'projection': 'equirectangular, north up, east to the right; ' + (
+            'projection': 'equirectangular, north up, east to the right; ' + ('ROTATED 180 deg about the sub-planet axis (south up: the client mesh +Y is the IAU south pole of this retrograde moon); ' if cfg.get('flip') else '') + (
                 'rolled onto the previous site map, lon %g at the centre' % al['centre_lon'] if al['rolled'] else 'lon 0 at the centre'),
             'align': al, 'max_tier': '%dk' % top,
-            'normal': 'flat (128,128,255): no global DEM of %s is available; relief is not derived from image brightness' % cfg['name'],
+            'normal': ('none: shape-model body, the relief is in the client mesh' if cfg.get('nonormal') else
+                       'flat (128,128,255): relief is not derived from image brightness' + ('' if cfg.get('old', True) is False else '; no global DEM of %s is available' % cfg['name'])),
             'colour': colour_txt, 'colour_base': 'previous site map' if oldbase else 'mission mosaic (%s)' % cfg['mode'],
             'files': sorted(files),
             'source': cfg['source'], 'credit': cfg['credit']}
     json.dump(meta, open(os.path.join(out, 'meta.json'), 'w'), indent=1)
     print('  %s done in %d s' % (key, time.time() - t0), flush=True)
+
+
+def rot_fill(L, M, rgb, lat_max, f):
+    """unseen hemisphere (Voyager / New Horizons saw one side): filled with the body's OWN imaged terrain seen through
+    rotations of the sphere about the lon +-90 axis (180 deg first: (lat, lon) -> (-lat, 180 - lon); then +-90 deg, which
+    bring mid-latitude terrain to the far pole). Rotations, not mirrors: craters keep their handedness. Only the band-pass
+    detail (scales < SIG_ROT px) is copied; the low band is a smooth continuation of the data (copying the low band carried
+    the mosaics' illumination blobs). Sources poleward of |lat| = lat_max are left out (a polar feature such as Charon's
+    Mordor Macula must not be copied). Detail fades in over RAMP_ROT / 2 px from the data edge."""
+    H, W = L.shape
+    lat = np.radians(90 - (np.arange(H) + 0.5) * 180 / H)
+    lon = np.radians((np.arange(W) + 0.5) / W * 360 - 180)
+    cl = np.cos(lat)[:, None]
+    X, Y, Z = cl * np.cos(lon)[None, :], cl * np.sin(lon)[None, :], np.broadcast_to(np.sin(lat)[:, None], (H, W))
+    Ms = (M * smooth((lat_max - np.abs(np.degrees(lat))) / 4.0)[:, None]          # off the data rim (limb shading, dark fringe)
+          * smooth((dist(M > 0) - 6 * f) / (10 * f))).astype(np.float32)
+    gap = M < 1
+    d = dist(gap)
+    wh = smooth(d / (0.5 * RAMP_ROT * f)) * gap
+    sl = SIG_ROT * f
+    p = 8
+    chans = [L] if rgb is None else [L] + [np.ascontiguousarray(rgb[..., c]) for c in range(3)]
+    e = np.exp(-d / (RAMP_ROT * f)).astype(np.float32)               # far from the data: the body's mean level (pushpull
+    mw = M * np.cos(lat)[:, None]                                    # alone drags edge features into long columns)
+    lows = [blur(pushpull(x, M), sl) * e + float((x * mw).sum() / mw.sum()) * (1 - e) for x in chans]
+    acc = [np.zeros((H, W), np.float32) for _ in chans]
+    # detail band taken on the SOURCE grid, then rotated (a lat/lon blur of rotated content smears radially at the poles)
+    his = [(x - nblur(x, np.maximum(Ms, 1e-3), sl)) * (Ms > 0.5) for x in chans]
+    wsum = np.zeros((H, W), np.float32)
+    # 180 deg about the lon 90 axis first; then oblique axes (x/y-axis quarter turns map the equator onto meridians, so E-W
+    # features of every pass converged into a star at the pole)
+    for ax, ang in (((0, 1, 0), 180), ((1, 1, 0.6), 100), ((-1, 0.5, 0.8), -110), ((0.3, -1, 0.5), 95), ((1, -0.4, -0.7), -100)):
+        k_ = np.array(ax, np.float64); k_ /= np.linalg.norm(k_)
+        t = np.radians(-ang)                                        # source = R(-ang) . destination (Rodrigues)
+        c, s_ = np.cos(t), np.sin(t)
+        kd = k_[0] * X + k_[1] * Y + k_[2] * Z
+        cx, cy, cz = k_[1] * Z - k_[2] * Y, k_[2] * X - k_[0] * Z, k_[0] * Y - k_[1] * X
+        xs = X * c + cx * s_ + k_[0] * kd * (1 - c)
+        ys = Y * c + cy * s_ + k_[1] * kd * (1 - c)
+        zs = Z * c + cz * s_ + k_[2] * kd * (1 - c)
+        lat_s = np.degrees(np.arcsin(np.clip(zs, -1, 1)))
+        lon_s = np.degrees(np.arctan2(ys, xs))
+        mx = ((lon_s + 180) / 360 * W - 0.5 + p).astype(np.float32)
+        my = ((90 - lat_s) / 180 * H - 0.5).astype(np.float32)
+        rm = lambda x: cv2.remap(wrap_pad(x, p).astype(np.float32), mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+        mr = rm(Ms)
+        mr = smooth((blur(mr, 12 * f + 0.5) - 0.3) / 0.6) * gap       # soft source edge (no hard seams)
+        w = (mr * (1 - wsum)).astype(np.float32)
+        for k, hx in enumerate(his):
+            acc[k] += w * rm(hx)
+        wsum += w
+        print('  rotation %s %+d deg: covers %.3f' % (str(ax), ang, float(w.mean())), flush=True)
+    # what no rotation reaches: isotropic sphere-noise detail at the data's own relative detail level (plain, not blank)
+    hp = L - blur(L, sl)
+    rel = float(np.median((np.sqrt(nblur(hp * hp, M, 16 * f)) / np.maximum(nblur(L, M, 16 * f), 4.0))[M > 0]))
+    Nz = sphere_noise(H, W, tuple(max(l * f, 1.0) for l in (4, 8, 16, 32)), 11) * rel * (1 - wsum)
+    out = [np.where(gap, lo + (a_ + Nz * lo) * wh, x).astype(np.float32) for x, lo, a_ in zip(chans, lows, acc)]
+    L = out[0]
+    if rgb is not None:
+        rgb = np.dstack(out[1:])
+    print('  rotation fill: detail on %.3f of the map, plain continuation on %.3f' % (float(((wsum > 0.5) & gap).mean()), float(((wsum <= 0.5) & gap).mean())), flush=True)
+    M2 = np.ones_like(M)                                            # filled everywhere: no ring inpaint (it streaks)
+    return L, M2, rgb, ('; unseen areas: smooth continuation of the data + band-pass detail of the body\'s own imaged terrain '
+                        'seen through rotations of the sphere (sources |lat| <= %g; a plausible stand-in, not observed)' % lat_max)
+
+
+def smooth_mask(L, M, thr, f):
+    """airbrushed fill inside a 'GlobalFill' mosaic (Triton): no fine detail -> treated as no data"""
+    hp = L - blur(L, 2 * f + 0.5)
+    rel = np.sqrt(nblur(hp * hp, M, 12 * f)) / np.maximum(nblur(L, M, 12 * f), 8.0)
+    bad = ((rel < thr) & (M > 0)).astype(np.uint8)
+    k = max(3, int(16 * f) | 1)
+    bad = cv2.morphologyEx(bad, cv2.MORPH_OPEN, np.ones((k, k), np.uint8))
+    bad = cv2.dilate(bad, np.ones((k, k), np.uint8))
+    print('  smooth (airbrushed) area masked: %.3f (rel detail median %.4f)' % (float(bad.mean()), float(np.median(rel[M > 0]))), flush=True)
+    return M * (1 - bad)
 
 
 def old_base(O, L, M, Q, f, lat_r):
