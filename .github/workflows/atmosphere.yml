@@ -1,0 +1,20 @@
+name: atmosphere
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish
+jobs:
+  atmosphere:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy
+      - run: python data/atmosphere/build_atmosphere.py
+      - run: bash .github/scripts/publish.sh atmosphere data/atmosphere/out data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
