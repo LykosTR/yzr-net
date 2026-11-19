@@ -95,7 +95,8 @@ BODIES = {
                    centre=0, mode='own', sat=0.15, neutral=True, top=4, flip=True, rotfill=60, mask_smooth=0.03, rim=24, tint=(236, 214, 200),
                    credit='NASA/JPL (Voyager 2), USGS Astrogeology',
                    source='USGS Astrogeology: Triton Voyager 2 Global Color Mosaic 600 m'),
-    'phobos': dict(name='Phobos', radius_km=11.1, grey='Phobos_Viking_Mosaic_40ppd_DLRcontrol.tif', old=False, mean=66, centre=0,
+    # disabled (s35): the client keeps Phobos on the shared asteroid rock surface
+    'phobos': dict(name='Phobos', disabled=True, radius_km=11.1, grey='Phobos_Viking_Mosaic_40ppd_DLRcontrol.tif', old=False, mean=66, centre=0,
                    mode='lut', neutral=True, top=4, nonormal=True, credit='NASA/JPL (Viking Orbiter), DLR, USGS Astrogeology',
                    lut=[(0, (62, 56, 52)), (0.5, (120, 110, 102)), (1, (182, 172, 162))],
                    source='USGS Astrogeology: Phobos Viking Global Mosaic 40 ppd (DLR control)'),
@@ -107,7 +108,8 @@ for _k, _i, _r, _m, _lut in (
         ('titania', 3, 788.9, 78, [(0, (72, 68, 64)), (0.5, (136, 129, 122)), (1, (204, 196, 188))]),
         ('oberon', 4, 761.4, 72, [(0, (68, 62, 57)), (0.5, (130, 120, 111)), (1, (198, 188, 178))]),
         ('miranda', 5, 235.8, 76, [(0, (72, 71, 70)), (0.5, (138, 136, 133)), (1, (206, 204, 200))])):
-    BODIES[_k] = dict(name=_k.capitalize(), radius_km=_r, grey='ura%dvuu2.tif' % _i, url='https://maps.jpl.nasa.gov/tmaps/pix/',
+    BODIES[_k] = dict(name=_k.capitalize(), disabled=True, radius_km=_r,   # disabled (s35): client keeps the rock pipeline (maps too blurry)
+                      grey='ura%dvuu2.tif' % _i, url='https://maps.jpl.nasa.gov/tmaps/pix/',
                       old=False, mean=_m, centre=180, mode='lut', neutral=True, top=2, flip=True, rotfill=60, rim=40, pole_cut=72, credit=VOYU,
                       lut=_lut, source='USGS Voyager 2 airbrush mosaic (southern hemisphere), JPL Solar System Simulator map %d/%s'
                       % (_i, _k.capitalize()))
