@@ -41,18 +41,18 @@ CASSINI = 'NASA/JPL/Space Science Institute (Cassini ISS), NASA/JPL (Voyager), U
 # on the low-passed luminance (stops: normalised luminance -> RGB); neutral: blue capped at max(R, G) instead of G + 6
 BODIES = {
     'io': dict(name='Io', radius_km=1821.46, color='Io_GalileoSSI-Voyager_Global_Mosaic_ClrMerge_1km.tif', centre=0,
-               mode='own', sat=0.85, linear=True, base='own', pole_flat=75, top=8, credit=GALILEO,
+               mode='own', sat=0.85, linear=True, base='own', pole_flat=75, top=8, slope_deg=5, credit=GALILEO,
                source='USGS Astrogeology: Io Galileo SSI / Voyager Global Mosaic ClrMerge 1 km'),
     'europa': dict(name='Europa', radius_km=1562.09, grey='Europa_Voyager_GalileoSSI_global_mosaic_500m.tif', centre=180,
-                   mode='lut', neutral=True, top=8, credit=GALILEO,
+                   mode='lut', neutral=True, top=8, slope_deg=4, credit=GALILEO,
                    lut=[(0, (120, 92, 70)), (0.3, (170, 140, 112)), (0.6, (214, 200, 182)), (1, (240, 236, 228))],
                    source='USGS Astrogeology: Europa Voyager / Galileo SSI Global Mosaic 500 m'),
     'ganymede': dict(name='Ganymede', radius_km=2632.345, grey='Ganymede_Voyager_GalileoSSI_global_mosaic_1km.tif',
-                     color='Ganymede_Voyager_GalileoSSI_Global_ClrMosaic_1435m.tif', centre=180, mode='chroma', top=8,
+                     color='Ganymede_Voyager_GalileoSSI_Global_ClrMosaic_1435m.tif', centre=180, mode='chroma', top=8, slope_deg=7,
                      credit=GALILEO, source='USGS Astrogeology: Ganymede Voyager / Galileo SSI Global Mosaic 1 km, '
                                             'Ganymede Voyager / Galileo SSI Global Color Mosaic 1435 m'),
     'callisto': dict(name='Callisto', radius_km=2409.3, grey='Callisto_Voyager_GalileoSSI_global_mosaic_1km.tif', centre=180,
-                     mode='lut', top=8, credit=GALILEO,
+                     mode='lut', top=8, slope_deg=8, credit=GALILEO,
                      lut=[(0, (52, 46, 40)), (0.3, (88, 78, 68)), (0.6, (140, 130, 118)), (1, (222, 218, 210))],
                      source='USGS Astrogeology: Callisto Voyager / Galileo SSI Global Mosaic 1 km'),
     # disabled: the ISS frame patchwork shows as seams and the previous map's polar lakes would be lost
@@ -71,7 +71,7 @@ BODIES = {
     # ---- catalogue moons (no previous site map: USGS orientation, exposure from the measured geometric albedo) ----
     'mimas': dict(name='Mimas', radius_km=198.2, grey='MI_170630_DLR_basemap_degrees.tif', old=False, mean=128,
                   zip=(S3 + 'Mimas/Cassini_DLR_Mimas.zip', 'Cassini_DLR/MI_170630_DLR_basemap_degrees.tif'), centre=0,
-                  mode='lut', neutral=True, top=4,
+                  mode='lut', neutral=True, top=8, own_detail=True,
                   credit='NASA/JPL/Space Science Institute (Cassini ISS), DLR (Roatsch et al.), USGS Astrogeology',
                   lut=[(0, (112, 110, 106)), (0.5, (180, 178, 174)), (1, (234, 233, 230))],
                   source='DLR Cassini ISS Mimas global basemap (June 2017), USGS Astrogeology mosaic archive'),
@@ -88,12 +88,13 @@ BODIES = {
                  lut=[(0, (116, 113, 108)), (0.5, (184, 181, 176)), (1, (236, 234, 230))],
                  source='USGS Astrogeology: Rhea Cassini / Voyager Global Mosaic 417 m'),
     'charon': dict(name='Charon', radius_km=606.0, grey='Charon_NewHorizons_Global_Mosaic_300m_Jul2017_8bit.tif', old=False,
-                   mean=117, centre=180, mode='lut', neutral=True, top=8, rotfill=50, cap_tint=(68, 80, (128, 100, 88)),
+                   mean=117, centre=180, mode='lut', neutral=True, top=8, rotfill=50,
+                   dem='Charon_NewHorizons_Global_DEM_300m_Jul2017_16bit.tif', cap_tint=(68, 80, (128, 100, 88)),
                    credit='NASA/JHUAPL/SwRI (New Horizons LORRI / MVIC), USGS Astrogeology',
                    lut=[(0, (72, 70, 68)), (0.5, (142, 139, 134)), (1, (212, 208, 202))],
                    source='USGS Astrogeology: Charon New Horizons LORRI / MVIC Global Mosaic 300 m (July 2017)'),
     'triton': dict(name='Triton', radius_km=1353.4, color='Triton_Voyager2_ClrMosaic_GlobalFill_600m.tif', old=False, mean=124,
-                   centre=0, mode='own', sat=0.15, neutral=True, top=4, flip=True, rotfill=60, mask_smooth=0.03, rim=24, tint=(236, 214, 200),
+                   centre=0, mode='own', sat=0.15, neutral=True, top=4, slope_deg=5, flip=True, rotfill=60, mask_smooth=0.03, rim=24, tint=(236, 214, 200),
                    credit='NASA/JPL (Voyager 2), USGS Astrogeology',
                    source='USGS Astrogeology: Triton Voyager 2 Global Color Mosaic 600 m'),
     # disabled (s35): the client keeps Phobos on the shared asteroid rock surface
@@ -155,6 +156,7 @@ DET_MAX = 0.10                              # cap of the relative detail level t
 RES_MAX, RESP_MIN = 1.5, 0.05                # old-map base: local registration limit (px @2k) and minimum correlation peak
 DETAIL_W = 0.8                              # old-map base: mission detail weight x Q
 CHROMA_SAT = 0.5                            # Ganymede: colour-mosaic chroma gain (its frames carry per-frame tints)
+DEM_ROLL = 0                                # extra roll (px) of a DEM against the mosaic frame
 KNEE = 0.9                                  # soft highlight knee (fraction of 255)
 POLE_ROWS = 6
 RAMP_ROT = 48                               # rotation fill seam (px at the top tier)
@@ -506,6 +508,127 @@ def lut(n, stops):
     return np.dstack([np.interp(n, xs, ys[:, c]).astype(np.float32) for c in range(3)])
 
 
+def tiff_map16(path):
+    """uncompressed, contiguous-strip 16-bit signed GeoTIFF -> read-only memmap (H, W) + its GDAL nodata value"""
+    im = Image.open(path)
+    t = im.tag_v2
+    W, H = im.size
+    off = np.asarray(t[273], np.int64)
+    assert t.get(259, 1) == 1 and len(off) and np.all(np.diff(off) == W * 2 * (H // len(off))), 'DEM TIFF not contiguous/uncompressed'
+    nod = t.get(42113)
+    im.close()
+    return np.memmap(path, dtype=np.int16, mode='r', offset=int(off[0]), shape=(H, W)), (float(nod) if nod is not None else None)
+
+
+def area_dem(a, W, H, nodata, strip=64):
+    """exact area resample of a huge 2-D int16 array (row strips), nodata excluded; returns (value, coverage) at (H, W)"""
+    Hin = a.shape[0]
+    s = Hin / H
+    val = np.zeros((H, W), np.float32)
+    cov = np.zeros((H, W), np.float32)
+    for r0 in range(0, H, strip):
+        r1 = min(H, r0 + strip)
+        a0, b0 = int(np.floor(r0 * s)), min(Hin, int(np.ceil(r1 * s)))
+        A = np.zeros((r1 - r0, b0 - a0), np.float32)
+        for i in range(r0, r1):
+            lo, hi = i * s, (i + 1) * s
+            for j in range(int(np.floor(lo)), min(int(np.ceil(hi)), Hin)):
+                A[i - r0, j - a0] = (min(hi, j + 1) - max(lo, j)) / s
+        x = np.asarray(a[a0:b0]).astype(np.float32)
+        m = (x != nodata).astype(np.float32) if nodata is not None else np.ones_like(x)
+        cov[r0:r1] = A @ cv2.resize(m, (W, b0 - a0), interpolation=cv2.INTER_AREA)
+        val[r0:r1] = A @ cv2.resize(x * m, (W, b0 - a0), interpolation=cv2.INTER_AREA)
+    return np.where(cov > 1e-6, val / np.maximum(cov, 1e-6), 0).astype(np.float32), cov
+
+
+def height_normals(h, R, scale=None):
+    """tangent-space normals (float, H x W x 3; x east, y north, z up) of a height field h (km) on a sphere of radius R km;
+    scale = optional per-pixel strength of the xy slope (0 = flat)"""
+    H, W = h.shape
+    dlon, dlat = 2 * np.pi / W, np.pi / H
+    lat = np.pi / 2 - (np.arange(H) + 0.5) * dlat
+    coslat = np.maximum(np.cos(lat), 0.02)[:, None]
+    hx = (np.roll(h, -1, axis=1) - np.roll(h, 1, axis=1)) / (2 * R * coslat * dlon)
+    up, dn = np.vstack([h[:1], h[:-1]]), np.vstack([h[1:], h[-1:]])
+    hy = (up - dn) / (2 * R * dlat)
+    if scale is not None:
+        hx, hy = hx * scale, hy * scale
+    n = np.dstack([-hx, -hy, np.ones_like(h)]).astype(np.float32)
+    n /= np.linalg.norm(n, axis=2, keepdims=True)
+    return n
+
+
+def _renorm(n):
+    return n / np.maximum(np.linalg.norm(n, axis=2, keepdims=True), 1e-6)
+
+
+def n_to_8(n):
+    return np.clip(np.rint((n * 0.5 + 0.5) * 255), 0, 255).astype(np.uint8)
+
+
+def image_gradient(hp, R):
+    """(dh/dx_east, dh/dy_north) of a height field on the sphere, per unit of hp (km / km); cos(lat) clamped at 85 deg"""
+    H, W = hp.shape
+    lat = np.radians(90 - (np.arange(H) + 0.5) * 180 / H)
+    cl = np.maximum(np.cos(lat), np.cos(np.radians(85)))[:, None].astype(np.float32)
+    hx = (np.roll(hp, -1, 1) - np.roll(hp, 1, 1)) / (2 * 2 * np.pi * R * cl / W)
+    up, dn = np.vstack([hp[:1], hp[:-1]]), np.vstack([hp[1:], hp[-1:]])
+    hy = (up - dn) / (2 * np.pi * R / H)
+    return hx.astype(np.float32), hy.astype(np.float32)
+
+
+def image_relief(c8, Wt, D, R, slope_deg, f, lat_r):
+    """no DEM: band-pass luminance (6 px at 8k) x weight Wt as a height (bright = high), scaled so the RMS slope angle over D > 0.5,
+    |lat| < 60 equals slope_deg; returns (normals float H x W x 3, k km per luminance unit, measured RMS slope deg)"""
+    L = luma(c8.astype(np.float32))
+    hp = L - iso_blur(L, 6 * f, lat_r)
+    hp = iso_blur(hp, 0.8 * f, lat_r)
+    hp = (hp * Wt).astype(np.float32)
+    hx, hy = image_gradient(hp, R)
+    g = np.sqrt(hx * hx + hy * hy)
+    sel = (D > 0.5) & (np.abs(lat_r) < 60)[:, None]
+    gs = g[sel][::7].astype(np.float64)
+    assert gs.size > 1000, 'too few sharp pixels for the slope calibration'
+    rms = lambda k: float(np.degrees(np.sqrt(np.mean(np.arctan(k * gs) ** 2))))
+    lo, hi = 1e-6, 1e3
+    for _ in range(60):
+        k = (lo * hi) ** 0.5
+        if rms(k) < slope_deg:
+            lo = k
+        else:
+            hi = k
+    meas = rms(k)
+    pf = (1 - smooth((np.abs(lat_r) - 80) / 8.0))[:, None].astype(np.float32)
+    n = np.dstack([-hx * k * pf, -hy * k * pf, np.ones_like(hx)]).astype(np.float32)
+    n /= np.linalg.norm(n, axis=2, keepdims=True)
+    return n, k, meas
+
+
+def own_detail(col, Q, f, lat_r):
+    """low-resolution areas get band-pass luminance detail of the body's OWN sharp terrain through 5 sphere rotations
+    (fixed seed 47); per pixel the rotated copy whose rotated Q is highest; adds (1 - Q) * Qrot * D to the luminance"""
+    L = luma(col)
+    D = (L - iso_blur(L, 4 * f, lat_r)).astype(np.float32)
+    rng = np.random.default_rng(47)
+    bq = np.zeros_like(Q)
+    bd = np.zeros_like(Q)
+    for i in range(5):
+        ax = rng.standard_normal(3); ax /= np.linalg.norm(ax)
+        t = np.radians(rng.uniform(40, 140))
+        K = np.array([[0, -ax[2], ax[1]], [ax[2], 0, -ax[0]], [-ax[1], ax[0], 0]])
+        Rm = np.eye(3) + np.sin(t) * K + (1 - np.cos(t)) * (K @ K)
+        qr = sphere_rotate(Q, Rm)
+        dr = sphere_rotate(D, Rm)
+        better = qr > bq
+        bq = np.where(better, qr, bq)
+        bd = np.where(better, dr, bd)
+        print('  own-detail rotation %d: axis %s, %d deg' % (i, np.round(ax, 2), round(np.degrees(t))), flush=True)
+    add = (1 - Q) * np.clip(bq, 0, 1) * bd
+    col *= ((L + add) / np.maximum(L, 1.0))[..., None]
+    print('  own detail: mean |add| %.2f, weight (1-Q)*Qrot mean %.3f' % (float(np.abs(add).mean()), float(((1 - Q) * np.clip(bq, 0, 1)).mean())), flush=True)
+    return col
+
+
 def build(key, cfg, raw, out_root, Wt=None):
     t0 = time.time()
     rawk = os.path.join(raw, key); os.makedirs(rawk, exist_ok=True)
@@ -539,6 +662,7 @@ def build(key, cfg, raw, out_root, Wt=None):
         if rgb is not None:
             rgb = np.ascontiguousarray(rgb[::-1, ::-1])
     rot_txt = ''
+    colour_extra = ''
     Mdat = None
     if cfg.get('pole_cut'):                                           # radially smeared polar source (airbrush maps): refilled
         latc = 90 - (np.arange(H) + 0.5) * 180 / H
@@ -757,6 +881,10 @@ def build(key, cfg, raw, out_root, Wt=None):
             tc = np.array(tc, np.float32); tc /= float(luma(tc[None])[0])
             wc = smooth((lat_r - la0) / (la1 - la0))[:, None, None].astype(np.float32)
             col *= 1 + wc * (tc - 1)
+        if cfg.get('own_detail'):                                        # low-Q areas: detail of the body's own sharp terrain
+            col = own_detail(col, Q, f, lat_r)
+            colour_extra = ('; low-resolution areas carry band-pass detail of %s\'s own sharp terrain through 5 sphere rotations, '
+                            'weight (1-Q)' % cfg['name'])
 
         # --- exposure: global luminance mean of the previous map; soft highlight knee; no blue cast -------------------------
         # a tone curve (power per channel), not a gain: a 2x brighter previous map must not blow the highlights out
@@ -796,7 +924,38 @@ def build(key, cfg, raw, out_root, Wt=None):
                       '; harsh terminator lighting soft-clamped to the local median; low-resolution areas de-ringed; gaps filled '
                       '(wavy ramp <= %d px, ring inpaint); polar caps de-rippled in an azimuthal grid; multiplicative sphere-noise '
                       'grain (%g x local detail); luminance mean %s (tone power %.3f); no blue cast' % (RAMP, GRAIN_GAP,
-                      'of the previous map' if cfg.get('old', True) else '%g (from the measured geometric albedo)' % cfg['mean'], g) + rot_txt)
+                      'of the previous map' if cfg.get('old', True) else '%g (from the measured geometric albedo)' % cfg['mean'], g) + rot_txt + colour_extra)
+
+    # --- relief: Charon = New Horizons DEM; image-derived for the others with slope_deg; the rest stays flat -----------------
+    nrm8 = None                                                       # top-tier normal map (uint8) or per-tier callable
+    nrm_fn = None
+    nrm_txt = None
+    if cfg.get('dem') and not cfg.get('nonormal'):
+        dn_, dnod = tiff_map16(src(rawk, cfg['dem'], S3 + cfg['dem']))
+        hd, dcov = area_dem(dn_, W, H, dnod if dnod is not None else -32768)
+        del dn_
+        hd = hd / 1000.0                                              # metres -> km
+        hd, dcov = np.roll(hd, roll0 + DEM_ROLL, 1), np.roll(dcov, roll0 + DEM_ROLL, 1)   # same roll as the mosaic
+        D = cv2.erode((dcov > MASK_COV).astype(np.uint8), np.ones((MASK_ERODE, MASK_ERODE), np.uint8)).astype(np.float32)
+        del dcov
+        print('  DEM coverage %.3f of the map' % float(D.mean()), flush=True)
+        wd = smooth(dist(D > 0) / (16 * f))                           # 0 at the DEM mask edge, 1 beyond 16 px (no cliff)
+        hd = (np.where(D > 0, hd, 0) * wd).astype(np.float32)
+        del D, wd
+        qd = (Q * (1 - smooth((np.abs(lat_r) - 82) / 6))[:, None]).astype(np.float32)
+        nrm_fn = lambda w, hh: n_to_8(height_normals(hd if w == W else cv2.resize(hd, (w, hh), interpolation=cv2.INTER_AREA), cfg['radius_km'],
+                                                     qd if w == W else cv2.resize(qd, (w, hh), interpolation=cv2.INTER_AREA)))
+        nrm_txt = 'tangent space x=east y=north z=up, true scale from the New Horizons DEM 300 m (Jul 2017), flat outside DEM coverage'
+        print('  DEM relief: min %.2f max %.2f km' % (float(hd.min()), float(hd.max())), flush=True)
+    elif cfg.get('slope_deg') and not cfg.get('nonormal'):
+        Dm = (Mdat if Mdat is not None else M).astype(np.float32)        # real imaged pixels only (fills / rotation fill = 0)
+        Wr = (np.maximum(Q, 0.5) * Dm * smooth(dist(Dm > 0.5) / (16 * f))).astype(np.float32)
+        nn, kk_, meas = image_relief(c8, Wr, Dm, cfg['radius_km'], cfg['slope_deg'], f, lat_r)
+        del Wr, Dm
+        print('  image-derived relief: k %.5f km per luminance unit, RMS slope %.3f deg (target %g)' % (kk_, meas, cfg['slope_deg']), flush=True)
+        nrm_fn = lambda w, hh: n_to_8(nn if w == W else _renorm(cv2.resize(nn, (w, hh), interpolation=cv2.INTER_AREA)))
+        nrm_txt = ('tangent space x=east y=north z=up, IMAGE-DERIVED (no global DEM): band-pass luminance (6 px at 8k) as height, bright = high, '
+                   'RMS slope %g deg where the mosaic is sharp (x Q), flat elsewhere' % cfg['slope_deg'])
     if os.environ.get('MOONS_DEBUG'):                                # diagnostics (Q, mask, fill weight) outside the feed
         np.save(os.path.join(os.environ['MOONS_DEBUG'], key + '_q.npy'),
                 cv2.resize(np.dstack([Q, M, wfill]), (2048, 1024), interpolation=cv2.INTER_AREA).astype(np.float16))
@@ -814,12 +973,12 @@ def build(key, cfg, raw, out_root, Wt=None):
         if cfg.get('nonormal'):                                     # shape-model body: relief is in the mesh
             continue
         nm = '%s_normal_%dk.webp' % (key, kk)
-        webp(np.full((hh, w, 3), (128, 128, 255), np.uint8), os.path.join(out, nm), 92); files.append(nm)
+        webp(nrm_fn(w, hh) if nrm_fn else np.full((hh, w, 3), (128, 128, 255), np.uint8), os.path.join(out, nm), 92); files.append(nm)
     meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': cfg['radius_km'],
             'projection': 'equirectangular, north up, east to the right; ' + ('ROTATED 180 deg about the sub-planet axis (south up: the client mesh +Y is the IAU south pole of this retrograde moon); ' if cfg.get('flip') else '') + (
                 'rolled onto the previous site map, lon %g at the centre' % al['centre_lon'] if al['rolled'] else 'lon 0 at the centre'),
             'align': al, 'max_tier': '%dk' % top,
-            'normal': ('none: shape-model body, the relief is in the client mesh' if cfg.get('nonormal') else
+            'normal': (nrm_txt if nrm_txt else 'none: shape-model body, the relief is in the client mesh' if cfg.get('nonormal') else
                        'flat (128,128,255): relief is not derived from image brightness' + ('' if cfg.get('old', True) is False else '; no global DEM of %s is available' % cfg['name'])),
             'colour': colour_txt, 'colour_base': 'previous site map' if oldbase else 'mission mosaic (%s)' % cfg['mode'],
             'files': sorted(files),
