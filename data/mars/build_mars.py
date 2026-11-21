@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mars surface maps for Space Radar (USGS Astrogeology, public domain):
+"""Mars surface maps for Cosmos (USGS Astrogeology, public domain):
   colour : Mars Viking Colorized Global Mosaic 925 m (MDIM 2.1 colour, 23059x11530)
   relief : Mars MGS MOLA DEM Global Mosaic 463 m (int16 metres above R = 3396.19 km)
 The Viking colour is graded to the site's previous Mars look (per-channel distribution of the band |lat| < 55 deg, measured

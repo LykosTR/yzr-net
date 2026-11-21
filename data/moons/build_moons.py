@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Surface maps of the large moons for Space Radar (USGS Astrogeology mission mosaics, public domain):
+"""Surface maps of the large moons for Cosmos (USGS Astrogeology mission mosaics, public domain):
   io       : Galileo SSI + Voyager global mosaic, ClrMerge 1 km (real colour)
   europa   : Voyager + Galileo SSI global mosaic 500 m (grey)
   ganymede : Voyager + Galileo SSI global mosaic 1 km (grey detail) + global colour mosaic 1435 m (chroma)

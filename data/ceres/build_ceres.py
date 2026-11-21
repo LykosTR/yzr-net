@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ceres surface maps for Space Radar (USGS Astrogeology / DLR, public domain):
+"""Ceres surface maps for Cosmos (USGS Astrogeology / DLR, public domain):
   image  : Ceres Dawn FC global mosaic 140 m (DLR, Feb 2016, clear filter, ISIS cube 21093x10546, 8-bit, 1 = no data /
            shadow; lon -180..180, Kait longitude system)
   relief : Ceres Dawn FC HAMO DTM DLR global 60 ppd (Oct 2016, int16 metres above R = 470 km, lon 0..360)

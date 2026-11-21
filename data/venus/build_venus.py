@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Venus SURFACE maps for Space Radar, built from Magellan data (USGS Astrogeology, public domain):
+"""Venus SURFACE maps for Cosmos, built from Magellan data (USGS Astrogeology, public domain):
   surface: Venus Magellan C3-MDIR Global Mosaic 2025 m (radar backscatter, 18775x9388)
   relief : Venus Magellan Topography Global 4641 m v02 (int16 metres above R = 6051.8 km, -32768 = no data)
 The surface under the clouds has no visible-light map, so the radar mosaic carries the detail and is rendered with the

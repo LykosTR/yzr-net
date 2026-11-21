@@ -1,4 +1,4 @@
-"""Monthly catalogue of bright galaxies for the Space Radar browser.
+"""Monthly catalogue of bright galaxies for the Cosmos browser.
 
 Source
   * HyperLEDA (Observatoire de Lyon) SQL service, table meandata: position, morphology, D25, axis ratio, PA, total B mag

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pluto surface maps for Space Radar (USGS Astrogeology, public domain):
+"""Pluto surface maps for Cosmos (USGS Astrogeology, public domain):
   image  : Pluto New Horizons Global Mosaic 300 m (LORRI + MVIC, 8-bit, 24888x12444, 0 = unimaged)
   relief : Pluto New Horizons Global DEM 300 m (int16 metres above R = 1188.3 km, -32768 = no data)
 Colour is the previous site map (NASA enhanced colour, already in the USGS layout: the new maps are rolled onto it,

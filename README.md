@@ -8,7 +8,7 @@
 
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.3.20-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.4.5-2E7D32)
 
 </div>
 
@@ -26,55 +26,26 @@ Depo, YZR Net'in web arayüzünden ziyade onu destekleyen veri altyapısına oda
 
 ## 📡 Açık veri akışları
 
-GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük dosyalara çevirir ve **`data`** dalına yayımlar. Site bu dosyaları doğrudan `raw.githubusercontent.com` üzerinden okur (CORS `*`). API anahtarı ya da gizli bilgi kullanılmaz.
+GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük dosyalara çevirir ve **`data`** dalına yayımlar (büyük kataloglar **`catalog`** dalında). Site bu dosyaları doğrudan `raw.githubusercontent.com` üzerinden okur (CORS `*`); dosya yoksa ya da eskiyse ilgili servise düşer. API anahtarı ya da gizli bilgi kullanılmaz.
 
-| Akış | Kaynak | Güncelleme |
-|---|---|---|
-| Rüzgâr 10 m, 1° küresel | NOAA/NCEP GFS | 04:30, 10:30, 16:30, 22:30 UTC |
-| Depremler ve yangınlar (24 s) | USGS, NASA VIIRS (Esri Living Atlas) | 30 dakikada bir |
-| Kutup ışığı tahmini | NOAA SWPC OVATION | 10 dakikada bir |
-| Okyanus akıntıları | Copernicus Marine Service | saatte bir |
-| Gök cisimleri: gezegenler, cüce gezegenler, doğal uydular, asteroitler (yörünge elemanları), Ay (saatlik konum vektörleri) | NASA/JPL Horizons, NASA/JPL SBDB | saatte bir |
-| Kuyruklu yıldızlar: NASA kataloğundaki tüm kuyruklu yıldızlar (~4100; yörünge elemanları, çekirdek çapı, albedo, dönme süresi, parlaklık katsayıları) | NASA/JPL SBDB | 6 saatte bir |
-| Asteroit kataloğu: numaralı asteroitlerin tümü (ad dizini + yörünge elemanları, **`catalog`** dalı) | NASA/JPL SBDB | günde bir (03:20 UTC) |
-| Yıldız kataloğu: Güneş'e ~3 kpc içindeki en parlak 1 milyon yıldız (konum, paralaks, parlaklık, renk, sıcaklık, yarıçap, ışıma gücü, adlar ve katalog numaraları; **`catalog`** dalı, `stars/`) | ESA Gaia DR3, HYG v4.1 | haftada bir (Pazar 03:40 UTC) |
-| Galaksi kataloğu: HyperLEDA'daki B parlaklığı < 15 olan ~50 bin galaksi (3B konum, çap, eksen oranı, açı, morfoloji, bar, B-V, PGC; Messier ve ortak adlar; **`catalog`** dalı, `galaxies/`) | HyperLEDA (Lyon Gözlemevi) | ayda bir (ayın 1'i 04:10 UTC) |
-| Samanyolu panoraması: yıldızları ayıklanmış, arka plan ışığı çıkarılmış 360° galaktik koordinat görüntüsü (4096×2048 ve 2048×1024 WebP; **`catalog`** dalı, `milkyway/`) | ESO / S. Brunier (eso0932a), CC BY 4.0 | ayda bir (ayın 1'i 04:10 UTC) |
-| Ay yüzey haritaları: renk (LROC WAC) ve gerçek ölçekli kabartmadan (LOLA 64 piksel/derece) hesaplanmış normal haritası (8K/4K/2K WebP, `moon/`) | NASA SVS (CGI Moon Kit), LRO LROC, LRO LOLA | elle (`moon` iş akışı) |
-| Merkür yüzey haritaları: renk (MDIS MD3 mozaiği, doğal gri tona çekilmiş) ve gerçek ölçekli kabartmadan (MESSENGER 665 m DEM) hesaplanmış normal haritası (8K/4K/2K WebP, `mercury/`) | USGS Astrogeology, NASA/JHUAPL/CIW (MESSENGER) | elle (`mercury` iş akışı) |
-| Venüs yüzey haritaları: sitenin önceki Magellan tabanlı renk haritası (kuzey yukarı çevrilmiş), ince ayrıntıları Magellan radar mozaiğinden (şerit izleri temizlenmiş) ve gerçek ölçekli Magellan topografyasından normal haritası (8K/4K/2K WebP, `venus/`) | USGS Astrogeology, NASA/JPL (Magellan) | elle (`venus` iş akışı) |
-| Mars yüzey haritaları: Viking renkli mozaiği ve gerçek ölçekli MOLA kabartmasından normal haritası (8K/4K/2K WebP, `mars/`) | USGS Astrogeology, NASA/JPL (Viking), NASA/GSFC (MGS MOLA) | elle (`mars` iş akışı) |
-| Ceres ve Pluto yüzey haritaları: Dawn FC ve New Horizons mozaikleri, gerçek ölçekli DEM'den normal haritası (8K/4K/2K WebP, `ceres/`, `pluto/`) | USGS Astrogeology, NASA/JPL/DLR (Dawn), NASA/JHUAPL/SwRI (New Horizons) | elle (`ceres`, `pluto` iş akışları) |
-| Io, Europa, Ganymede, Callisto, Mimas, Enceladus, Tethys, Rhea, Charon, Triton, Ariel, Umbriel, Titania, Oberon, Miranda yüzey haritaları: Galileo/Voyager, Cassini ve New Horizons küresel mozaikleri; görülmemiş yarıküreler cismin kendi görüntülenmiş arazisiyle doldurulmuştur; Uranüs uydularında Astra-Planetshine haritası, Voyager 2'nin büyük ölçekli parlaklığıyla birleştirilmiştir (8K/4K/2K WebP, `moons/`) | USGS Astrogeology, NASA/JPL (Galileo, Voyager), NASA/JPL/SSI (Cassini), DLR (Mimas), NASA/JHUAPL/SwRI (New Horizons) | elle (`moons` iş akışı) |
-| Diğer gök cisimlerinin renk haritaları (Jüpiter, Satürn ve halkası, Uranüs, Neptün, cüce gezegenler, Io, Europa, Ganymede, Callisto, Titan, Dione, Iapetus) ve asteroit kaya dokusu: sitenin önceki dokuları tek parça haritaya birleştirilmiş (8K/4K/2K WebP, `textures/<cisim>/`) | NASA/JPL ve ilgili görev ekipleri (önceki site dokuları, kaynak listesi `data/textures/tiles.json`) | elle (`textures` iş akışı) |
-| Dünya atmosferi: fiziksel tabanlı saçılma tabloları (geçirgenlik, çoklu saçılma ve gök ışınımı; Rayleigh + Mie + ozon; `atmosphere/earth.bin`); 2B ve 3B haritalarda gökyüzü, ufuk, alacakaranlık, yer üstü pusu ve gece-gündüz aydınlatması bu tablolardan hesaplanır | Hillaire (2020) ve Bruneton (2017) atmosfer modelleri, standart Dünya parametreleri | elle (`atmosphere` iş akışı) |
-| Dünya bulut katmanı dokuları (`clouds/`, sabit dosya) | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
+| Akış | Ne | Kaynak | Güncelleme |
+|---|---|---|---|
+| Rüzgâr | 10 m, 1° küresel rüzgâr | NOAA GFS | 6 saatte bir |
+| Depremler ve yangınlar | Son 24 saat | USGS, NASA VIIRS | 30 dakikada bir |
+| Kutup ışığı | Tahmin haritası | NOAA SWPC | 10 dakikada bir |
+| Okyanus akıntıları | Yüzey akıntıları | Copernicus Marine | saatte bir |
+| Gök cisimleri | Gezegenler, uydular, asteroit yörüngeleri, Ay konumu | NASA/JPL Horizons, SBDB | saatte bir |
+| Kuyruklu yıldızlar | Tüm kuyruklu yıldızlar (~4100) | NASA/JPL SBDB | 6 saatte bir |
+| Asteroit kataloğu | Numaralı tüm asteroitler | NASA/JPL SBDB | günde bir |
+| Yıldız kataloğu | En parlak 1 milyon yıldız | ESA Gaia DR3, HYG v4.1 (CC BY-SA 4.0) | haftada bir |
+| Galaksi kataloğu | ~50 bin galaksi | HyperLEDA | ayda bir |
+| Samanyolu panoraması | 360° galaktik görüntü | ESO / S. Brunier (CC BY 4.0) | ayda bir |
+| Yüzey haritaları | Ay, Merkür, Venüs, Mars, Ceres, Pluto ve büyük uyduların renk ve kabartma haritaları | USGS Astrogeology, NASA (LRO, MESSENGER, Magellan, Viking, MOLA, Dawn, New Horizons, Galileo, Voyager, Cassini), DLR | elle |
+| Diğer cisim dokuları | Dev gezegenler, cüce gezegenler, asteroit kayası | NASA/JPL ve görev ekipleri | elle |
+| Dünya atmosferi | Saçılma tabloları (gökyüzü, alacakaranlık, pus) | Hillaire (2020), Bruneton (2017) modelleri | elle |
+| Bulut katmanı | Dünya bulut dokuları | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
 
-## 📡 Veri kaynakları
-
-Veri önce `data` dalından okunur; dosya yoksa ya da eskiyse ilgili servise doğrudan düşülür.
-
-| Veri | Kaynak |
-|---|---|
-| Uydu görüntüsü | Esri World Imagery, Clarity |
-| 3D harita ve yükseklik | ArcGIS Maps SDK for JavaScript |
-| Depremler | USGS |
-| Yangınlar | NASA FIRMS / VIIRS |
-| Rüzgâr | NOAA GFS |
-| Okyanus akıntıları | Copernicus Marine Service |
-| Gök cisimleri ve kuyruklu yıldızlar | NASA/JPL Horizons, SBDB |
-| Yıldızlar | ESA Gaia DR3 (AIP Gaia aynası), HYG v4.1 (CC BY-SA 4.0: adlar, Hipparcos parlak yıldızları) |
-| Galaksiler | HyperLEDA (Lyon Gözlemevi) |
-| Samanyolu panoraması | ESO/S. Brunier (CC BY 4.0) |
-| Ay yüzeyi | NASA's Scientific Visualization Studio, LRO LROC (NASA/GSFC/ASU), LRO LOLA (NASA/GSFC) |
-| Merkür yüzeyi | NASA/JHUAPL/Carnegie Institution of Washington (MESSENGER MDIS), USGS Astrogeology |
-| Venüs yüzeyi | NASA/JPL (Magellan), USGS Astrogeology |
-| Mars yüzeyi | NASA/JPL (Viking), NASA/GSFC MOLA Science Team, USGS Astrogeology |
-| Ceres ve Pluto yüzeyi | NASA/JPL-Caltech/UCLA/MPS/DLR/IDA (Dawn), NASA/JHUAPL/SwRI (New Horizons), USGS Astrogeology |
-| Jüpiter ve Satürn uyduları | NASA/JPL (Galileo, Voyager), NASA/JPL-Caltech/Space Science Institute (Cassini), USGS Astrogeology |
-| Uranüs uyduları (Ariel, Umbriel, Titania, Oberon, Miranda) | NASA/JPL (Voyager 2), USGS Astrogeology, JPL Solar System Simulator; tam küre renk ve kabartma haritaları: [Astra-Planetshine, "Uranus Project Missing Data"](https://www.deviantart.com/astra-planetshine/art/Uranus-Project-Missing-Data-Titania-646920848) (sanatçının izniyle serbest kullanım, atıf ile) |
-| Gonggong ve Sedna (temsilî) | Hiçbir uzay aracı görüntülemediği için temsilî küreler: Astra-Planetshine arazisi döndürülüp ölçülmüş renk ve albedoya göre yeniden renklendirilmiştir |
-| Hava durumu | Open-Meteo |
+Uranüs uyduları ile Gonggong ve Sedna haritaları, [Astra-Planetshine](https://www.deviantart.com/astra-planetshine/art/Uranus-Project-Missing-Data-Titania-646920848) çalışmasına dayanır (sanatçının izniyle, atıf ile). Gonggong ve Sedna temsilî küreledir. Uydu görüntüsü (Esri), 3B harita (ArcGIS) ve hava durumu (Open-Meteo) doğrudan ilgili servislerden okunur.
 
 ## 📜 Veri hakları
 

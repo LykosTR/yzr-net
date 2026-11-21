@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Body colour maps for Space Radar, re-hosted from the site's original Blogger tile sets (tiles.json).
+"""Body colour maps for Cosmos, re-hosted from the site's original Blogger tile sets (tiles.json).
 Each body's tiles are slices of one equirectangular map (north up, lon 0 at the centre); cell edges sit at
 round(i * W / n), exactly as the old in-browser assembler placed them.
 Outputs (out/<key>/): <key>_color_{2,4,8}k.webp (only tiers <= the source width) + meta.json.
@@ -74,7 +74,7 @@ def main():
                 f = '%s_%s.webp' % (key, name)
                 im.save(os.path.join(d, f), 'WEBP', quality=92, method=6)
                 files.append(f)
-            json.dump({'v': 1, 'built': built, 'files': files, 'source': 'previous Space Radar texture (see tiles.json)'},
+            json.dump({'v': 1, 'built': built, 'files': files, 'source': 'previous Cosmos texture (see tiles.json)'},
                       open(os.path.join(d, 'meta.json'), 'w'), indent=1)
             print(key, files, flush=True)
             continue
@@ -92,7 +92,7 @@ def main():
             im.save(os.path.join(d, f), 'WEBP', quality=90, method=6)
             files.append(f)
         json.dump({'v': 1, 'built': built, 'size': [W, H], 'tiers': [int(f.split('_')[-1][:-6]) for f in files],
-                   'files': files, 'source': 'previous Space Radar texture (Blogger tiles, see tiles.json)'},
+                   'files': files, 'source': 'previous Cosmos texture (Blogger tiles, see tiles.json)'},
                   open(os.path.join(d, 'meta.json'), 'w'), indent=1)
         print(key, W, H, img.mode, files, round(time.time() - t0), 's', flush=True)
 

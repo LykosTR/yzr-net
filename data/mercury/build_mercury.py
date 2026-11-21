@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mercury surface maps for Space Radar, built from MESSENGER data (USGS Astrogeology, public domain):
+"""Mercury surface maps for Cosmos, built from MESSENGER data (USGS Astrogeology, public domain):
   colour : Mercury MESSENGER MDIS Basemap MD3 Color Mosaic Global 665 m (23040x11520, 1000/750/430 nm)
   relief : Mercury MESSENGER USGS DEM Global 665 m v2 (int16 metres above R = 2439.4 km)
 The MD3 colour is a strongly stretched product; Mercury's real look is a near-neutral grey, so the luminance carries the

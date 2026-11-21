@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Moon surface maps for Space Radar, built from NASA data (NASA's Scientific Visualization Studio, CGI Moon Kit,
+"""Moon surface maps for Cosmos, built from NASA data (NASA's Scientific Visualization Studio, CGI Moon Kit,
 https://svs.gsfc.nasa.gov/4720 -- LRO LROC WAC Hapke-normalized colour mosaic + LRO LOLA elevation, public domain).
 
 Outputs (out/), equirectangular, 0 deg longitude at the centre column, north up:

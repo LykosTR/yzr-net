@@ -1,4 +1,4 @@
-"""Fetch the Space Radar point layers (recent earthquakes, VIIRS fires of the last 24 h) from the public Esri
+"""Fetch the Cosmos point layers (recent earthquakes, VIIRS fires of the last 24 h) from the public Esri
 Living Atlas feature services and write compact JSON: {"at": <epoch ms>, "fields": [...], "rows": [[x, y, ...], ...]}.
 Every row is [lon, lat, <fields in order>]; time-dependent fields (hoursOld / hours_old) are the value AT `at`."""
 import json, os, sys, time, urllib.parse, urllib.request

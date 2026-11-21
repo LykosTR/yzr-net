@@ -1,4 +1,4 @@
-"""Weekly catalogue of ~1M stars around the Sun for the Space Radar browser.
+"""Weekly catalogue of ~1M stars around the Sun for the Cosmos browser.
 
 Sources
   * ESA Gaia DR3 (served by the AIP Gaia mirror; the ESA archive is unreachable from GitHub runners): position, parallax, G, BP-RP,
