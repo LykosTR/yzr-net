@@ -9,6 +9,10 @@ import numpy as np
 from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'moons'))
+# s48: image-derived relief (no global DEM): key -> (radius km, RMS slope deg)
+RELIEF = {'dione': (561.4, 6), 'iapetus': (734.5, 6), 'pluto': (1188.3, 5), 'eris': (1163.0, 3), 'makemake': (715.0, 4),
+          'orcus': (458.0, 4), 'quaoar': (555.0, 4)}
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'out')
 TIERS = (2, 4, 8)
@@ -81,6 +85,7 @@ def main():
         img = assemble(key, spec, raw)
         W, H = img.size
         files = []
+        tl = []
         for k in TIERS:
             w = k * 1024
             if w > W and k != TIERS[0]:
@@ -91,8 +96,28 @@ def main():
             f = '%s_color_%dk.webp' % (key, k)
             im.save(os.path.join(d, f), 'WEBP', quality=90, method=6)
             files.append(f)
-        json.dump({'v': 1, 'built': built, 'size': [W, H], 'tiers': [int(f.split('_')[-1][:-6]) for f in files],
-                   'files': files, 'source': 'previous Cosmos texture (Blogger tiles, see tiles.json)'},
+            tl.append((k, w, h))
+        colour_files = [f for f in files if '_color_' in f]
+        extra = {}
+        if key in RELIEF:
+            import cv2
+            from build_moons import image_relief, n_to_8, _renorm
+            _, wT, hT = tl[-1][0], tl[-1][1], tl[-1][2]
+            c8 = np.asarray(img.convert('RGB').resize((wT, hT), Image.LANCZOS) if img.size != (wT, hT) else img.convert('RGB'), np.uint8)
+            f = wT / 8192.0
+            lat_r = 90 - (np.arange(hT) + 0.5) * 180 / hT
+            ones = np.ones((hT, wT), np.float32)
+            nn, kk, meas = image_relief(c8, ones, ones, RELIEF[key][0], RELIEF[key][1], f, lat_r)
+            print(key, 'relief k %.5f RMS %.3f deg' % (kk, meas), flush=True)
+            for k, w, h in tl:
+                normals = nn if (w, h) == (wT, hT) else _renorm(cv2.resize(nn, (w, h), interpolation=cv2.INTER_AREA))
+                nf = '%s_normal_%dk.webp' % (key, k)
+                Image.fromarray(n_to_8(normals)).save(os.path.join(d, nf), 'WEBP', quality=92, method=6)
+                files.append(nf)
+            extra['normal'] = ('tangent space x=east y=north z=up, IMAGE-DERIVED (no DEM): band-pass luminance as height, '
+                               'bright = high, RMS slope %g deg' % RELIEF[key][1])
+        json.dump({'v': 1, 'built': built, 'size': [W, H], 'tiers': [int(f.split('_')[-1][:-6]) for f in colour_files],
+                   'files': files, 'source': 'previous Cosmos texture (Blogger tiles, see tiles.json)', **extra},
                   open(os.path.join(d, 'meta.json'), 'w'), indent=1)
         print(key, W, H, img.mode, files, round(time.time() - t0), 's', flush=True)
 

@@ -9,7 +9,7 @@
 [![Kod: MIT](https://img.shields.io/badge/kod-MIT-blue.svg)](LICENSE)
 [![Veri: CC BY 4.0](https://img.shields.io/badge/veri-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA.md)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.4.8-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.4.9-2E7D32)
 
 </div>
 

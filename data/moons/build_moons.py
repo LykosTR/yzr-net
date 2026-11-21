@@ -71,20 +71,28 @@ BODIES = {
     # ---- catalogue moons (no previous site map: USGS orientation, exposure from the measured geometric albedo) ----
     'mimas': dict(name='Mimas', radius_km=198.2, grey='MI_170630_DLR_basemap_degrees.tif', old=False, mean=128,
                   zip=(S3 + 'Mimas/Cassini_DLR_Mimas.zip', 'Cassini_DLR/MI_170630_DLR_basemap_degrees.tif'), centre=0,
-                  mode='lut', neutral=True, top=8, own_detail=True,
+                  mode='lut', neutral=True, top=8, own_detail=True, slope_deg=7,
+                  hybrid=dict(terrain='oberon', rot=(37, 211, -64), sig_deg=1.5, relief_km=8,
+                              craters=[(-1.7, 248.2, 139, 10.0, 1.5, 6.0)]),
                   credit='NASA/JPL/Space Science Institute (Cassini ISS), DLR (Roatsch et al.), USGS Astrogeology',
                   lut=[(0, (112, 110, 106)), (0.5, (180, 178, 174)), (1, (234, 233, 230))],
                   source='DLR Cassini ISS Mimas global basemap (June 2017), USGS Astrogeology mosaic archive'),
     'enceladus': dict(name='Enceladus', radius_km=252.1, grey='Enceladus_Cassini_ISS_Global_Mosaic_100m_HPF.tif', old=False,
-                      mean=176, centre=0, mode='lut', top=8, credit=CASSINI,
+                      mean=176, centre=180, mode='lut', top=8, credit=CASSINI,
+                      dsk='cas_enceladus_ssd_spc_1024icq_v2.bds', deshade=(24, 0.3),
                       lut=[(0, (156, 162, 166)), (0.5, (212, 218, 222)), (1, (246, 249, 252))],
                       source='USGS Astrogeology: Enceladus Cassini ISS Global Mosaic 100 m (high-pass filtered)'),
     'tethys': dict(name='Tethys', radius_km=531.1, grey='Tethys_Cassini_mosaic_global_293m.tif', old=False, mean=150, centre=0,
-                   mode='lut', neutral=True, top=8, credit=CASSINI,
+                   mode='lut', neutral=True, top=8, slope_deg=6, credit=CASSINI,
+                   despot=2.2, hl=1.35, hyb_clip=(0.72, 1.35),
+                   hybrid=dict(terrain='umbriel', rot=(-48, 77, 119), sig_deg=1.5, relief_km=9,
+                               craters=[(32.8, 231.1, 445, 3.0, 1.0, 0.0, dict(floor=1.0, dome=1.5))],   # rough (cratered) floor kept
+                               troughs=[dict(name='Ithaca Chasma', pole=(32.8, 231.1), centre_lon=321.1, half_deg=110, taper_deg=15,
+                                             depth=3.5, w=50.0, wall=14.0, shoulder=0.8, shoulder_r=60.0, shoulder_w=12.0)]),
                    lut=[(0, (128, 126, 122)), (0.5, (192, 190, 186)), (1, (240, 239, 236))],
                    source='USGS Astrogeology: Tethys Cassini Global Mosaic 293 m'),
     'rhea': dict(name='Rhea', radius_km=763.8, grey='Rhea_Cassini_Voyager_mosaic_global_417m.tif', old=False, mean=124, centre=0,
-                 mode='lut', neutral=True, top=8, credit=CASSINI,
+                 mode='lut', neutral=True, top=8, slope_deg=6, credit=CASSINI,
                  lut=[(0, (116, 113, 108)), (0.5, (184, 181, 176)), (1, (236, 234, 230))],
                  source='USGS Astrogeology: Rhea Cassini / Voyager Global Mosaic 417 m'),
     'charon': dict(name='Charon', radius_km=606.0, grey='Charon_NewHorizons_Global_Mosaic_300m_Jul2017_8bit.tif', old=False,
@@ -94,7 +102,7 @@ BODIES = {
                    lut=[(0, (72, 70, 68)), (0.5, (142, 139, 134)), (1, (212, 208, 202))],
                    source='USGS Astrogeology: Charon New Horizons LORRI / MVIC Global Mosaic 300 m (July 2017)'),
     'triton': dict(name='Triton', radius_km=1353.4, color='Triton_Voyager2_ClrMosaic_GlobalFill_600m.tif', old=False, mean=124,
-                   centre=0, mode='own', sat=0.15, neutral=True, top=4, slope_deg=5, flip=True, rotfill=60, mask_smooth=0.03, rim=24, tint=(236, 214, 200),
+                   centre=0, mode='own', sat=0.15, neutral=True, top=8, slope_deg=5, flip=True, rotfill=60, rot_sig=20, mask_smooth=0.03, rim=24, tint=(236, 214, 200),
                    credit='NASA/JPL (Voyager 2), USGS Astrogeology',
                    source='USGS Astrogeology: Triton Voyager 2 Global Color Mosaic 600 m'),
     # disabled (s35): the client keeps Phobos on the shared asteroid rock surface
@@ -160,7 +168,9 @@ DEM_ROLL = 0                                # extra roll (px) of a DEM against t
 KNEE = 0.9                                  # soft highlight knee (fraction of 255)
 POLE_ROWS = 6
 RAMP_ROT = 48                               # rotation fill seam (px at the top tier)
-SIG_ROT = 48                                # rotation fill: detail band below this scale (px at the top tier)
+FILL_RELIEF = 0.7   # relief weight in filled / low-data areas (their detail is plausible terrain)
+USM_A = 0.35       # luminance unsharp amount (sigma 1 px at the top tier)
+SIG_ROT = 48                               # rotation fill: detail band below this scale (px at the top tier)
 
 
 def fetch(raw, cfg, field):
@@ -581,8 +591,10 @@ def image_relief(c8, Wt, D, R, slope_deg, f, lat_r):
     """no DEM: band-pass luminance (6 px at 8k) x weight Wt as a height (bright = high), scaled so the RMS slope angle over D > 0.5,
     |lat| < 60 equals slope_deg; returns (normals float H x W x 3, k km per luminance unit, measured RMS slope deg)"""
     L = luma(c8.astype(np.float32))
-    hp = L - iso_blur(L, 6 * f, lat_r)
-    hp = iso_blur(hp, 0.8 * f, lat_r)
+    hp = (L - iso_blur(L, 6 * f, lat_r)) + 0.6 * (L - iso_blur(L, 2 * f, lat_r))   # s48: two scales, sharper relief
+    hp = iso_blur(hp, 0.5 * f, lat_r)
+    c_ = 2.5 * float(np.sqrt(np.mean(hp[::5, ::5] ** 2))) + 1e-6
+    hp = (c_ * np.tanh(hp / c_)).astype(np.float32)                                  # albedo edges must not become cliffs
     hp = (hp * Wt).astype(np.float32)
     hx, hy = image_gradient(hp, R)
     g = np.sqrt(hx * hx + hy * hy)
@@ -609,6 +621,9 @@ def own_detail(col, Q, f, lat_r):
     (fixed seed 47); per pixel the rotated copy whose rotated Q is highest; adds (1 - Q) * Qrot * D to the luminance"""
     L = luma(col)
     D = (L - iso_blur(L, 4 * f, lat_r)).astype(np.float32)
+    sel_ = Q > 0.8
+    c_ = 2.0 * float(np.sqrt(np.mean(D[sel_] ** 2) if sel_.sum() > 1000 else np.mean(D ** 2))) + 1e-6
+    D = (c_ * np.tanh(D / c_)).astype(np.float32)                                     # s48: no high-contrast feature clones
     rng = np.random.default_rng(47)
     bq = np.zeros_like(Q)
     bd = np.zeros_like(Q)
@@ -627,6 +642,50 @@ def own_detail(col, Q, f, lat_r):
     col *= ((L + add) / np.maximum(L, 1.0))[..., None]
     print('  own detail: mean |add| %.2f, weight (1-Q)*Qrot mean %.3f' % (float(np.abs(add).mean()), float(((1 - Q) * np.clip(bq, 0, 1)).mean())), flush=True)
     return col
+
+
+DSK_URL = 'https://naif.jpl.nasa.gov/pub/naif/pds/data/co-s_j_e_v-spice-6-v1.0/cosp_1000/data/dsk/%s'
+import tempfile
+SCRATCH = os.environ.get('MOONS_SCRATCH') or os.path.join(tempfile.gettempdir(), 'moons_build')   # check images + hybrid temp build
+os.makedirs(SCRATCH, exist_ok=True)
+
+
+def dsk_aligned_height(path, c8, W, H, f, lat_r, key):
+    """NAIF DSK height (km) on the build grid, aligned (longitude mirror + roll) to the colour mosaic by the correlation of
+    the band-pass gradient magnitudes; searches the roll within +-64 px only (the source centre is set per body), warns when NCC < 0.03; writes SCRATCH/enc_align.png for a visual check"""
+    from dsk_relief import dsk_height
+    h0, _ = dsk_height(path, 4096, 2048)
+    h = h0 if W == 4096 else cv2.resize(h0, (W, H), interpolation=cv2.INTER_CUBIC)
+    del h0
+    L = luma(c8.astype(np.float32))
+    gm = lambda x: np.hypot(*np.gradient(x - iso_blur(x, 8.0, lat_r)))
+    GL, Gh = gm(L), gm(h)
+    sel = np.abs(lat_r) < 60
+    def rn(G):
+        G = G[sel]; G = G - G.mean(1, keepdims=True)
+        return G / np.maximum(G.std(1, keepdims=True), 1e-9)
+    A = rn(GL)
+    B = rn(Gh)
+    cc = np.fft.irfft((np.conj(np.fft.rfft(B, axis=1)) * np.fft.rfft(A, axis=1)).sum(0), n=W)   # shift s: B rolled by s matches A
+    cand = np.arange(-64, 65)
+    s = int(cand[np.argmax(cc[cand % W])])
+    nc = float(np.mean(A * np.roll(B, s, 1)))
+    nc0 = float(np.mean(A * B))
+    print('  DSK orientation: roll %d px (window -64..64), NCC %.4f (no roll %.4f)' % (s, nc, nc0), flush=True)
+    if nc < 0.03:
+        print('  WARNING: DSK orientation NCC %.4f < 0.03' % nc, flush=True)
+    h = np.ascontiguousarray(np.roll(h, s, 1)).astype(np.float32)
+    # visual check: hillshade (sun NW, 45 deg) blended 50/50 with the mosaic
+    w2, h2 = 2048, 1024
+    hs = cv2.resize(h, (w2, h2), interpolation=cv2.INTER_AREA)
+    n = height_normals(hs, 252.1)
+    l = np.array([-0.5, 0.5, 0.7071], np.float32)
+    sh = np.clip(n @ l, 0, 1)
+    g = cv2.resize(L, (w2, h2), interpolation=cv2.INTER_AREA)
+    g = np.clip(g / max(float(np.percentile(g, 99.5)), 1.0), 0, 1)
+    out = (0.5 * g + 0.5 * sh / max(float(np.percentile(sh, 99.5)), 1e-3))
+    cv2.imwrite(os.path.join(SCRATCH, 'enc_align.png'), np.clip(out * 255, 0, 255).astype(np.uint8))
+    return h
 
 
 def build(key, cfg, raw, out_root, Wt=None):
@@ -673,7 +732,7 @@ def build(key, cfg, raw, out_root, Wt=None):
         M = smooth_mask(L, M, cfg['mask_smooth'], f)
     if cfg.get('rotfill'):
         Mdat = M
-        L, M, rgb, rot_txt = rot_fill(L, M, rgb, cfg['rotfill'], f)
+        L, M, rgb, rot_txt = rot_fill(L, M, rgb, cfg['rotfill'], f, cfg.get('rot_sig', SIG_ROT))
     if cfg.get('old', True):
         O = np.array(Image.open(src(rawk, key + '_old_color_4k.webp', OLD % (key, key))).convert('RGB'), np.float32)
     else:
@@ -858,7 +917,8 @@ def build(key, cfg, raw, out_root, Wt=None):
                 Cr[..., c] = polar(np.ascontiguousarray(Cr[..., c]), lambda P, E, r: cap(cv2.GaussianBlur(P, (0, 0), 8), None, r,
                                    cfg.get('pole_flat')), n=int(2048 * f) // 2 * 2)
         gw = np.maximum((1 - Q) * M * (1 - wfill), smooth((np.abs(lat_r) - 70) / 10)[:, None].astype(np.float32))
-        L = L * (1 + np.clip(GRAIN_Q * det * gw * N, -0.6, 0.6))
+        if not cfg.get('own_detail', True):                           # s48: own-terrain detail replaces the noise grain
+            L = L * (1 + np.clip(GRAIN_Q * det * gw * N, -0.6, 0.6))
         del gw, N
 
         # --- colour --------------------------------------------------------------------------------------------------------
@@ -881,7 +941,7 @@ def build(key, cfg, raw, out_root, Wt=None):
             tc = np.array(tc, np.float32); tc /= float(luma(tc[None])[0])
             wc = smooth((lat_r - la0) / (la1 - la0))[:, None, None].astype(np.float32)
             col *= 1 + wc * (tc - 1)
-        if cfg.get('own_detail'):                                        # low-Q areas: detail of the body's own sharp terrain
+        if cfg.get('own_detail', True):                                      # low-Q areas: detail of the body's own sharp terrain
             col = own_detail(col, Q, f, lat_r)
             colour_extra = ('; low-resolution areas carry band-pass detail of %s\'s own sharp terrain through 5 sphere rotations, '
                             'weight (1-Q)' % cfg['name'])
@@ -907,6 +967,15 @@ def build(key, cfg, raw, out_root, Wt=None):
             col = 255 * (np.clip(col, 0, 255) / 255) ** g
         print('  luma mean new %.1f -> target %.1f (tone power %.3f)' % (Y.mean(), YOm, g), flush=True)
         del Y, cs, O
+        if cfg.get('deshade'):                                           # baked mosaic shadows would double the real relief shading
+            s_, a_ = cfg['deshade']
+            Yu = luma(col); Yl = iso_blur(Yu, s_ * f, lat_r)
+            col *= np.clip((Yl + a_ * (Yu - Yl)) / np.maximum(Yu, 1.0), 0.3, 3.0)[..., None]
+            del Yu, Yl
+        else:
+            Yu = luma(col); Yb = iso_blur(Yu, 1.0 * f, lat_r)
+            col *= np.clip((Yu + USM_A * (Yu - Yb)) / np.maximum(Yu, 1.0), 0.6, 1.6)[..., None]   # s48: sharper colour
+            del Yu, Yb
         T = KNEE * 255
         col = np.where(col > T, T + (255 - T) * (1 - np.exp(-(col - T) / (255 - T))), col)
         if cfg.get('neutral'):
@@ -930,7 +999,14 @@ def build(key, cfg, raw, out_root, Wt=None):
     nrm8 = None                                                       # top-tier normal map (uint8) or per-tier callable
     nrm_fn = None
     nrm_txt = None
-    if cfg.get('dem') and not cfg.get('nonormal'):
+    if cfg.get('dsk'):
+        hd = dsk_aligned_height(src(rawk, cfg['dsk'], DSK_URL % cfg['dsk']), c8, W, H, f, lat_r, key)
+        pwf = lambda hh: (1 - smooth((np.abs(90 - (np.arange(hh) + 0.5) * 180 / hh) - 86) / 3.0))[:, None].astype(np.float32)
+        nrm_fn = lambda w, hh: n_to_8(height_normals(hd if w == W else cv2.resize(hd, (w, hh), interpolation=cv2.INTER_AREA), cfg['radius_km'],
+                                                     np.broadcast_to(pwf(hh), (hh, w))))
+        nrm_txt = ('tangent space x=east y=north z=up, TRUE SCALE from the NAIF/JPL Cassini SPC global shape model (Park et al. 2023, '
+                   'ICQ 1024, ~0.4 km), ellipsoid removed')
+    elif cfg.get('dem') and not cfg.get('nonormal'):
         dn_, dnod = tiff_map16(src(rawk, cfg['dem'], S3 + cfg['dem']))
         hd, dcov = area_dem(dn_, W, H, dnod if dnod is not None else -32768)
         del dn_
@@ -949,13 +1025,15 @@ def build(key, cfg, raw, out_root, Wt=None):
         print('  DEM relief: min %.2f max %.2f km' % (float(hd.min()), float(hd.max())), flush=True)
     elif cfg.get('slope_deg') and not cfg.get('nonormal'):
         Dm = (Mdat if Mdat is not None else M).astype(np.float32)        # real imaged pixels only (fills / rotation fill = 0)
-        Wr = (np.maximum(Q, 0.5) * Dm * smooth(dist(Dm > 0.5) / (16 * f))).astype(np.float32)
+        ed_ = Dm * smooth(dist(Dm > 0.5) / (16 * f))
+        Wr = (np.maximum(Q, 0.5) * (ed_ + FILL_RELIEF * (1 - ed_))).astype(np.float32)   # s48: filled areas get relief too
+        del ed_
         nn, kk_, meas = image_relief(c8, Wr, Dm, cfg['radius_km'], cfg['slope_deg'], f, lat_r)
         del Wr, Dm
         print('  image-derived relief: k %.5f km per luminance unit, RMS slope %.3f deg (target %g)' % (kk_, meas, cfg['slope_deg']), flush=True)
         nrm_fn = lambda w, hh: n_to_8(nn if w == W else _renorm(cv2.resize(nn, (w, hh), interpolation=cv2.INTER_AREA)))
         nrm_txt = ('tangent space x=east y=north z=up, IMAGE-DERIVED (no global DEM): band-pass luminance (6 px at 8k) as height, bright = high, '
-                   'RMS slope %g deg where the mosaic is sharp (x Q), flat elsewhere' % cfg['slope_deg'])
+                   'RMS slope %g deg where the mosaic is sharp (x Q), x %g in filled areas' % (cfg['slope_deg'], FILL_RELIEF))
     if os.environ.get('MOONS_DEBUG'):                                # diagnostics (Q, mask, fill weight) outside the feed
         np.save(os.path.join(os.environ['MOONS_DEBUG'], key + '_q.npy'),
                 cv2.resize(np.dstack([Q, M, wfill]), (2048, 1024), interpolation=cv2.INTER_AREA).astype(np.float16))
@@ -1286,7 +1364,143 @@ def build_tno(key, cfg, raw, out_root, Wt=None):
     print('  %s done in %d s' % (key, time.time() - t0), flush=True)
 
 
-def rot_fill(L, M, rgb, lat_max, f):
+def build_hybrid(key, cfg, raw, out_root, Wt=None):
+    """real large-scale albedo of the mission mosaic (low-passed) x the artist's terrain detail (a Uranian moon rotated) +
+    analytic big craters; relief = high-passed artist bump + analytic crater profiles, true scale"""
+    t0 = time.time()
+    hy = cfg['hybrid']
+    tmp = os.path.join(SCRATCH, 'hyb_tmp')
+    build(key, cfg, raw, tmp, Wt)                                     # the real colour map (deterministic)
+    top = cfg['top']
+    W, H = (Wt, Wt // 2) if Wt else SIZES[top]
+    kk0 = [k for k, v in SIZES.items() if v == (W, H)][0]
+    C = np.asarray(Image.open(os.path.join(tmp, key, '%s_color_%dk.webp' % (key, kk0))).convert('RGB'), np.float32)
+    assert C.shape[:2] == (H, W), C.shape
+    Rk = cfg['radius_km']
+    lat_r = 90 - (np.arange(H) + 0.5) * 180 / H
+    sig = hy['sig_deg'] * W / 360.0
+    print('== hybrid', key, 'terrain', hy['terrain'], W, 'x', H, 'sigma %.1f px' % sig, flush=True)
+    # --- crater check image (real 2k colour map, red = lon_east as given, cyan = west convention) --------------------------
+    c2 = cv2.resize(C, (2048, 1024), interpolation=cv2.INTER_AREA).astype(np.uint8)
+    chk = np.ascontiguousarray(c2[..., ::-1])
+    for (la, lo, dm) in [c[:3] for c in hy['craters']]:
+        for lo_, colr in ((lo, (0, 0, 255)), (-lo, (255, 255, 0))):
+            ang = np.linspace(0, 2 * np.pi, 181)
+            rr = (dm / 2) / Rk
+            la0, lo0 = np.radians(la), np.radians(lo_)
+            sl = np.arcsin(np.clip(np.sin(la0) * np.cos(rr) + np.cos(la0) * np.sin(rr) * np.cos(ang), -1, 1))
+            ln = lo0 + np.arctan2(np.sin(ang) * np.sin(rr) * np.cos(la0), np.cos(rr) - np.sin(la0) * np.sin(sl))
+            px = ((np.degrees(ln) + 180) % 360) / 360 * 2048
+            py = (90 - np.degrees(sl)) / 180 * 1024
+            cv2.polylines(chk, [np.stack([px, py], 1).astype(np.int32)], True, colr, 2)
+    cv2.imwrite(os.path.join(SCRATCH, '%s_crater_check.png' % key), chk)
+    # --- colour ----------------------------------------------------------------------------------------------------------
+    Clo = np.dstack([iso_blur(np.ascontiguousarray(C[..., c]), sig, lat_r) for c in range(3)])
+    del C
+    a = np.radians(hy['rot'])
+    Rx = np.array([[1, 0, 0], [0, np.cos(a[0]), -np.sin(a[0])], [0, np.sin(a[0]), np.cos(a[0])]])
+    Ry = np.array([[np.cos(a[1]), 0, np.sin(a[1])], [0, 1, 0], [-np.sin(a[1]), 0, np.cos(a[1])]])
+    Rz = np.array([[np.cos(a[2]), -np.sin(a[2]), 0], [np.sin(a[2]), np.cos(a[2]), 0], [0, 0, 1]])
+    Rm = Rz @ Ry @ Rx
+    sc = BODIES[hy['terrain']]
+    rawk = os.path.join(raw, hy['terrain']); os.makedirs(rawk, exist_ok=True)
+    A = np.asarray(Image.open(art_src(rawk, sc, sc['art_color'])).convert('RGB'))
+    up = W / A.shape[1]
+    La = luma(cv2.resize(A, (W, H), interpolation=cv2.INTER_AREA if up <= 1 else cv2.INTER_LANCZOS4).astype(np.float32))
+    del A
+    if cfg.get('despot'):
+        La = despot(La, cfg['despot'], W)
+    La = sphere_rotate(La, Rm)
+    La = La + ART_USM[1] * (La - blur(La, ART_USM[0] * max(up, 1.0)))
+    if cfg.get('hl'):                                                 # bright spots (painted / copied terrain): soft cap
+        La = hl_cap(La, cfg['hl'], W)
+    La = np.maximum(La, 1.0)
+    D = np.clip(La / np.maximum(iso_blur(La, sig, lat_r), 1.0), *cfg.get('hyb_clip', (0.55, 1.6)))
+    del La
+    col = Clo * D[..., None]
+    del Clo, D
+    col *= float(cfg['mean']) / max(float(luma(col).mean()), 1e-3)
+    T = KNEE * 255
+    col = np.where(col > T, T + (255 - T) * (1 - np.exp(-(col - T) / (255 - T))), col)
+    c8 = np.clip(np.rint(col), 0, 255).astype(np.uint8)
+    del col
+    # --- relief ----------------------------------------------------------------------------------------------------------
+    B = np.asarray(Image.open(art_src(rawk, sc, sc['art_bump'])).convert('L'))
+    B = cv2.resize(B, (W, H), interpolation=cv2.INTER_AREA if B.shape[1] >= W else cv2.INTER_CUBIC).astype(np.float32)
+    B = sphere_rotate(blur(B, 1.6 * W / 8192), Rm)
+    B = B - iso_blur(B, 10.0 * W / 360.0, lat_r)
+    lo, hi = np.percentile(B, [0.5, 99.5])
+    hgt = np.clip((B - lo) / max(hi - lo, 1.0), 0, 1).astype(np.float32) * hy['relief_km']
+    del B
+    lon = np.radians((np.arange(W) + 0.5) / W * 360 - 180)[None, :]
+    la_all = np.radians(lat_r)
+    for cr in hy['craters']:
+        la, lo_e, dm, dep, rim, pk = cr[:6]
+        op = cr[6] if len(cr) > 6 else {}
+        R = dm / 2.0
+        la0, lo0 = np.radians(la), np.radians(lo_e)
+        for r0 in range(0, H, 256):
+            r1 = min(H, r0 + 256)
+            lt = la_all[r0:r1, None]
+            hv = np.sin((lt - la0) / 2) ** 2 + np.cos(lt) * np.cos(la0) * np.sin((lon - lo0) / 2) ** 2
+            d = 2 * Rk * np.arcsin(np.sqrt(np.clip(hv, 0, 1)))        # great-circle km
+            fl = np.minimum(smooth((d / R - 0.85) / 0.3) + op.get('floor', 0.25), 1.0)
+            x_ = d / R                                                 # s48: continuous at the rim (the old Gaussian + ejecta
+            prof = np.where(x_ < 1, -dep * (1 - x_ ** 2) + rim * x_ ** 4,   # step drew a sharp ring line in the normals)
+                            rim / np.maximum(x_, 1.0) ** 3)
+            prof = prof + pk * np.exp(-(d / (0.12 * R)) ** 2)
+            if op.get('dome'):
+                prof = prof + op['dome'] * np.exp(-(d / (0.25 * R)) ** 2)
+            hgt[r0:r1] = hgt[r0:r1] * fl + prof
+        print('  crater lat %g lon_east %g diam %g km added' % (la, lo_e, dm), flush=True)
+    for tr in hy.get('troughs', []):
+        pla, plo = np.radians(tr['pole'][0]), np.radians(tr['pole'][1])
+        Pv = np.array([np.cos(pla) * np.cos(plo), np.cos(pla) * np.sin(plo), np.sin(pla)])
+        cl_ = np.radians(tr['centre_lon'])
+        C0 = np.array([np.cos(cl_), np.sin(cl_), 0.0])
+        C0 -= Pv * float(C0 @ Pv); C0 /= np.linalg.norm(C0)          # arc centre = equatorial crossing of the circle
+        Tv = np.cross(Pv, C0)
+        for r0 in range(0, H, 256):
+            r1 = min(H, r0 + 256)
+            lt = la_all[r0:r1, None]
+            ux, uy, uz = np.cos(lt) * np.cos(lon), np.cos(lt) * np.sin(lon), np.broadcast_to(np.sin(lt), (r1 - r0, W))
+            sv = np.arcsin(np.clip(ux * Pv[0] + uy * Pv[1] + uz * Pv[2], -1, 1))
+            s_km = Rk * sv
+            phi = np.degrees(np.abs(np.arctan2(ux * Tv[0] + uy * Tv[1] + uz * Tv[2], ux * C0[0] + uy * C0[1] + uz * C0[2])))
+            wt = 1 - smooth((phi - (tr['half_deg'] - tr['taper_deg'])) / tr['taper_deg'])
+            # s48: flat-floored graben with steep walls (half width tr['w'], walls tr['wall'] km wide) + raised shoulders
+            prof = -tr['depth'] * (1 - smooth((np.abs(s_km) - (tr['w'] - tr['wall'])) / tr['wall'])) + tr['shoulder'] * np.exp(-((np.abs(s_km) - tr['shoulder_r']) / tr['shoulder_w']) ** 2)
+            hgt[r0:r1] += (prof * wt).astype(np.float32)
+        print('  trough %s added' % tr['name'], flush=True)
+    hs_ = cv2.resize(hgt, (2048, 1024), interpolation=cv2.INTER_AREA)
+    nh = height_normals(hs_, Rk)
+    shd = np.clip(nh @ np.array([-0.5, 0.5, 0.7071], np.float32), 0, 1)
+    cv2.imwrite(os.path.join(SCRATCH, '%s_relief_check.png' % key), np.clip(shd / max(float(np.percentile(shd, 99.5)), 1e-3) * 255, 0, 255).astype(np.uint8))
+    pw = (1 - smooth((np.abs(lat_r) - 84) / 5))[:, None]
+    n8 = n_to_8(height_normals(hgt, Rk, np.broadcast_to(pw, (H, W)).astype(np.float32)))
+    print('  hybrid height min %.2f max %.2f km' % (float(hgt.min()), float(hgt.max())), flush=True)
+    out = os.path.join(out_root, key); os.makedirs(out, exist_ok=True)
+    files = []
+    for kk, (w, hh) in SIZES.items():
+        if (Wt is None and kk > top) or (Wt and w > W):
+            continue
+        cc = c8 if w == W else cv2.resize(c8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_color_%dk.webp' % (key, kk); webp(cc, os.path.join(out, nm), 90); files.append(nm)
+        nn = n8 if w == W else cv2.resize(n8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_normal_%dk.webp' % (key, kk); webp(nn, os.path.join(out, nm), 92); files.append(nm)
+    cn = ', '.join('%g km crater at %g N, %g E' % (c[2], c[0], c[1]) for c in hy['craters']) + ''.join(', trough ' + t['name'] for t in hy.get('troughs', []))
+    meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': Rk,
+            'projection': 'equirectangular, north up, east to the right, lon 0 at the centre', 'max_tier': '%dk' % top,
+            'HYBRID': 'real large-scale albedo (USGS/DLR mosaic low-passed %g deg) x artist terrain detail (Astra-Planetshine %s, rotated) '
+                      '+ analytic crater (%s)' % (hy['sig_deg'], hy['terrain'], cn),
+            'normal': 'tangent space (x east, y north), true scale: artist bump high-passed (span %g km) + analytic crater profiles' % hy['relief_km'],
+            'files': sorted(files), 'source': cfg['source'] + ' + Astra-Planetshine "Uranus Project Missing Data" terrain',
+            'credit': cfg['credit'] + '; ' + sc['credit']}
+    json.dump(meta, open(os.path.join(out, 'meta.json'), 'w'), indent=1)
+    print('  %s hybrid done in %d s' % (key, time.time() - t0), flush=True)
+
+
+def rot_fill(L, M, rgb, lat_max, f, sig=SIG_ROT):
     """unseen hemisphere (Voyager / New Horizons saw one side): filled with the body's OWN imaged terrain seen through
     rotations of the sphere about the lon +-90 axis (180 deg first: (lat, lon) -> (-lat, 180 - lon); then +-90 deg, which
     bring mid-latitude terrain to the far pole). Rotations, not mirrors: craters keep their handedness. Only the band-pass
@@ -1303,7 +1517,7 @@ def rot_fill(L, M, rgb, lat_max, f):
     gap = M < 1
     d = dist(gap)
     wh = smooth(d / (0.5 * RAMP_ROT * f)) * gap
-    sl = SIG_ROT * f
+    sl = sig * f
     p = 8
     chans = [L] if rgb is None else [L] + [np.ascontiguousarray(rgb[..., c]) for c in range(3)]
     e = np.exp(-d / (RAMP_ROT * f)).astype(np.float32)               # far from the data: the body's mean level (pushpull
@@ -1312,6 +1526,11 @@ def rot_fill(L, M, rgb, lat_max, f):
     acc = [np.zeros((H, W), np.float32) for _ in chans]
     # detail band taken on the SOURCE grid, then rotated (a lat/lon blur of rotated content smears radially at the poles)
     his = [(x - nblur(x, np.maximum(Ms, 1e-3), sl)) * (Ms > 0.5) for x in chans]
+    his_ = []
+    for hx_ in his:                                                    # s48: soft amplitude clip, no distinctive feature clones
+        c_ = 1.5 * float(np.sqrt(np.mean(hx_[Ms > 0.5] ** 2))) + 1e-6
+        his_.append((c_ * np.tanh(hx_ / c_)).astype(np.float32))
+    his = his_
     wsum = np.zeros((H, W), np.float32)
     # 180 deg about the lon 90 axis first; then oblique axes (x/y-axis quarter turns map the equator onto meridians, so E-W
     # features of every pass converged into a star at the pole)
@@ -1447,7 +1666,7 @@ def main():
     Wt = int(opt['size']) if 'size' in opt else None
     t0 = time.time()
     for k in keys:
-        (build_tno if BODIES[k].get('tno') else build_direct if BODIES[k].get('direct') else build_art if BODIES[k].get('art') else build)(k, BODIES[k], raw, out, Wt)
+        (build_hybrid if BODIES[k].get('hybrid') else build_tno if BODIES[k].get('tno') else build_direct if BODIES[k].get('direct') else build_art if BODIES[k].get('art') else build)(k, BODIES[k], raw, out, Wt)
     print('done in', round(time.time() - t0), 's')
 
 
