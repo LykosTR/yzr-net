@@ -1,0 +1,18 @@
+{
+ "v": 1,
+ "built": "2026-11-18T16:54:12Z",
+ "radius_km": 3396.19,
+ "projection": "equirectangular, lon 0 at centre, north up",
+ "normal": "tangent space x=east y=north z=up (OpenGL), true scale from MOLA 463 m",
+ "colour": "Viking colorized mosaic, per-channel CDF-matched to the previous site map (|lat| < 55); ice caps neutral; relief occlusion 0.22",
+ "files": [
+  "mars_color_2k.webp",
+  "mars_color_4k.webp",
+  "mars_color_8k.webp",
+  "mars_normal_2k.webp",
+  "mars_normal_4k.webp",
+  "mars_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Mars Viking Colorized Global Mosaic 925m, Mars MGS MOLA DEM Global Mosaic 463m",
+ "credit": "NASA/JPL (Viking), NASA/GSFC MOLA Science Team (MGS MOLA), USGS Astrogeology"
+}

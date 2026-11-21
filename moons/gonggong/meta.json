@@ -1,0 +1,20 @@
+{
+ "v": 1,
+ "built": "2026-11-21T09:04:13Z",
+ "radius_km": 615,
+ "projection": "equirectangular, north up, east to the right",
+ "max_tier": "8k",
+ "ILLUSTRATIVE": "no spacecraft image of Gonggong exists: the terrain is Umbriel's (artist's full-globe map) rotated by (63, 141, -38) deg, recoloured to the measured colour / albedo",
+ "normal": "tangent space (x east, y north), true scale from the artist's bump map, height span 10 km",
+ "colour": "measured colour (1.0, 0.7, 0.5) with provinces (1.0, 0.79, 0.64), luminance mean 58",
+ "files": [
+  "gonggong_color_2k.webp",
+  "gonggong_color_4k.webp",
+  "gonggong_color_8k.webp",
+  "gonggong_normal_2k.webp",
+  "gonggong_normal_4k.webp",
+  "gonggong_normal_8k.webp"
+ ],
+ "source": "ILLUSTRATIVE: Umbriel terrain (artist map) rotated, recoloured to Gonggong (very red, geometric albedo 0.14)",
+ "credit": "Astra-Planetshine (deviantart.com/astra-planetshine, \"Uranus Project Missing Data\"), recoloured; colours: published TNO photometry"
+}

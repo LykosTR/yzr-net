@@ -1,0 +1,26 @@
+{
+ "v": 1,
+ "built": "2026-11-21T08:57:31Z",
+ "radius_km": 198.2,
+ "projection": "equirectangular, north up, east to the right; lon 0 at the centre",
+ "align": {
+  "applied": false,
+  "ncc": null,
+  "note": "no previous site map: USGS orientation (lon 0 at the centre)",
+  "rolled": false,
+  "shift_8k": null,
+  "centre_lon": 0.0
+ },
+ "max_tier": "4k",
+ "normal": "flat (128,128,255): relief is not derived from image brightness",
+ "colour": "natural-colour LUT on the low-passed luminance (sigma 6 px) x detail ratio, stops [(0, (112, 110, 106)), (0.5, (180, 178, 174)), (1, (234, 233, 230))]; harsh terminator lighting soft-clamped to the local median; low-resolution areas de-ringed; gaps filled (wavy ramp <= 128 px, ring inpaint); polar caps de-rippled in an azimuthal grid; multiplicative sphere-noise grain (0.6 x local detail); luminance mean 128 (from the measured geometric albedo) (tone power 1.000); no blue cast",
+ "colour_base": "mission mosaic (lut)",
+ "files": [
+  "mimas_color_2k.webp",
+  "mimas_color_4k.webp",
+  "mimas_normal_2k.webp",
+  "mimas_normal_4k.webp"
+ ],
+ "source": "DLR Cassini ISS Mimas global basemap (June 2017), USGS Astrogeology mosaic archive",
+ "credit": "NASA/JPL/Space Science Institute (Cassini ISS), DLR (Roatsch et al.), USGS Astrogeology"
+}

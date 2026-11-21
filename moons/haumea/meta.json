@@ -1,0 +1,20 @@
+{
+ "v": 1,
+ "built": "2026-11-21T09:05:19Z",
+ "radius_km": 798,
+ "projection": "equirectangular, north up, east to the right, lon 0 at the centre; made by the artist for a 3-axis ellipsoid (the client maps it onto the scaled sphere mesh)",
+ "max_tier": "8k",
+ "ILLUSTRATIVE": "Haumea has never been imaged: artist's impression",
+ "normal": "tangent space (x east, y north), true scale from the artist bump map on the mean radius, height span 12 km",
+ "colour": "artist colour map as published (no recolouring), area-resampled",
+ "files": [
+  "haumea_color_2k.webp",
+  "haumea_color_4k.webp",
+  "haumea_color_8k.webp",
+  "haumea_normal_2k.webp",
+  "haumea_normal_4k.webp",
+  "haumea_normal_8k.webp"
+ ],
+ "source": "Astra-Planetshine \"Haumea Artist's Impression v3\" (deviantart.com/astra-planetshine/art/Haumea-Artist-s-Impression-v3-566021580): colour + bump maps, ILLUSTRATIVE (Haumea has never been imaged)",
+ "credit": "Astra-Planetshine (DeviantArt), artist's impression, used with permission"
+}

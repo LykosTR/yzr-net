@@ -1,0 +1,28 @@
+{
+ "v": 1,
+ "built": "2026-11-21T08:58:47Z",
+ "radius_km": 531.1,
+ "projection": "equirectangular, north up, east to the right; lon 0 at the centre",
+ "align": {
+  "applied": false,
+  "ncc": null,
+  "note": "no previous site map: USGS orientation (lon 0 at the centre)",
+  "rolled": false,
+  "shift_8k": 0,
+  "centre_lon": 0.0
+ },
+ "max_tier": "8k",
+ "normal": "flat (128,128,255): relief is not derived from image brightness",
+ "colour": "natural-colour LUT on the low-passed luminance (sigma 6 px) x detail ratio, stops [(0, (128, 126, 122)), (0.5, (192, 190, 186)), (1, (240, 239, 236))]; harsh terminator lighting soft-clamped to the local median; low-resolution areas de-ringed; gaps filled (wavy ramp <= 128 px, ring inpaint); polar caps de-rippled in an azimuthal grid; multiplicative sphere-noise grain (0.6 x local detail); luminance mean 150 (from the measured geometric albedo) (tone power 1.000); no blue cast",
+ "colour_base": "mission mosaic (lut)",
+ "files": [
+  "tethys_color_2k.webp",
+  "tethys_color_4k.webp",
+  "tethys_color_8k.webp",
+  "tethys_normal_2k.webp",
+  "tethys_normal_4k.webp",
+  "tethys_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Tethys Cassini Global Mosaic 293 m",
+ "credit": "NASA/JPL/Space Science Institute (Cassini ISS), NASA/JPL (Voyager), USGS Astrogeology"
+}

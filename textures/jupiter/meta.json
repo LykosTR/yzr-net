@@ -1,0 +1,17 @@
+{
+ "v": 1,
+ "built": "2026-11-18T18:43:50Z",
+ "size": [
+  4096,
+  2048
+ ],
+ "tiers": [
+  2,
+  4
+ ],
+ "files": [
+  "jupiter_color_2k.webp",
+  "jupiter_color_4k.webp"
+ ],
+ "source": "previous Space Radar texture (Blogger tiles, see tiles.json)"
+}

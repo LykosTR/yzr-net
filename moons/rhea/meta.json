@@ -1,0 +1,28 @@
+{
+ "v": 1,
+ "built": "2026-11-21T08:59:17Z",
+ "radius_km": 763.8,
+ "projection": "equirectangular, north up, east to the right; lon 0 at the centre",
+ "align": {
+  "applied": false,
+  "ncc": null,
+  "note": "no previous site map: USGS orientation (lon 0 at the centre)",
+  "rolled": false,
+  "shift_8k": 0,
+  "centre_lon": 0.0
+ },
+ "max_tier": "8k",
+ "normal": "flat (128,128,255): relief is not derived from image brightness",
+ "colour": "natural-colour LUT on the low-passed luminance (sigma 6 px) x detail ratio, stops [(0, (116, 113, 108)), (0.5, (184, 181, 176)), (1, (236, 234, 230))]; harsh terminator lighting soft-clamped to the local median; low-resolution areas de-ringed; gaps filled (wavy ramp <= 128 px, ring inpaint); polar caps de-rippled in an azimuthal grid; multiplicative sphere-noise grain (0.6 x local detail); luminance mean 124 (from the measured geometric albedo) (tone power 1.000); no blue cast",
+ "colour_base": "mission mosaic (lut)",
+ "files": [
+  "rhea_color_2k.webp",
+  "rhea_color_4k.webp",
+  "rhea_color_8k.webp",
+  "rhea_normal_2k.webp",
+  "rhea_normal_4k.webp",
+  "rhea_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Rhea Cassini / Voyager Global Mosaic 417 m",
+ "credit": "NASA/JPL/Space Science Institute (Cassini ISS), NASA/JPL (Voyager), USGS Astrogeology"
+}

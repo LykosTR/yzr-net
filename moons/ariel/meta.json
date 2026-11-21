@@ -1,0 +1,19 @@
+{
+ "v": 1,
+ "built": "2026-11-21T09:01:25Z",
+ "radius_km": 578.9,
+ "projection": "equirectangular, east to the right; ROTATED 180 deg about the sub-planet axis (south up: the client mesh +Y is the IAU south pole of this retrograde moon); lon 0 at the centre",
+ "max_tier": "8k",
+ "normal": "tangent space (x east, y north of the image), true scale from the artist's bump map, height span 10 km",
+ "colour": "artist's full-globe map (saturation x0.12, measured tint, luminance mean 92 from the albedo) x the low-passed (3 deg) Voyager / artist luminance ratio over the imaged southern hemisphere (weight 0.8, clamp (0.7, 1.4)); unsharp mask (1.2, 0.55)",
+ "files": [
+  "ariel_color_2k.webp",
+  "ariel_color_4k.webp",
+  "ariel_color_8k.webp",
+  "ariel_normal_2k.webp",
+  "ariel_normal_4k.webp",
+  "ariel_normal_8k.webp"
+ ],
+ "source": "Astra-Planetshine \"Uranus Project Missing Data\" colour + bump maps x USGS Voyager 2 airbrush mosaic (southern hemisphere), JPL Solar System Simulator map 1/Ariel",
+ "credit": "Astra-Planetshine (deviantart.com/astra-planetshine, \"Uranus Project Missing Data\"); NASA/JPL (Voyager 2), USGS Astrogeology (T. Becker), JPL Solar System Simulator"
+}

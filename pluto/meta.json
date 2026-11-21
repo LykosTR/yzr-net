@@ -1,0 +1,37 @@
+{
+ "v": 1,
+ "built": "2026-11-18T22:45:23Z",
+ "radius_km": 1188.3,
+ "projection": "equirectangular, north up, east to the right; rolled onto the previous site map, lon -180 at the centre",
+ "align": {
+  "candidates_noflip": {
+   "best_shift_1k": 512,
+   "ncc": 0.5285,
+   "ncc_shift0": -0.0015,
+   "ncc_roll180": 0.5285
+  },
+  "candidates_flip": {
+   "best_shift_1k": 472,
+   "ncc": 0.0105,
+   "ncc_shift0": -0.0009,
+   "ncc_roll180": 0.0035
+  },
+  "ncc": 0.5271,
+  "shift_8k": 4096,
+  "flip": false,
+  "applied": true,
+  "centre_lon": -180.0
+ },
+ "normal": "tangent space x=east y=north z=up (OpenGL), true scale from the New Horizons DEM 300 m, xy scaled by the resolution map Q x DEM coverage (feather 128 px); flat where the DEM has no data",
+ "colour": "previous site map (NASA enhanced colour, Lanczos 4k -> 8k) at all frequencies; New Horizons detail (L / gauss(L, 8 px)) multiplied in with weight 0.8 x Q (fine/coarse band ratio vs Sputnik/Tombaugh), zero where the local old/new shift exceeds 1.5 px at 2k",
+ "files": [
+  "pluto_color_2k.webp",
+  "pluto_color_4k.webp",
+  "pluto_color_8k.webp",
+  "pluto_normal_2k.webp",
+  "pluto_normal_4k.webp",
+  "pluto_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Pluto New Horizons Global Mosaic 300m (Jul 2017), Pluto New Horizons Global DEM 300m (Jul 2017)",
+ "credit": "NASA/JHUAPL/SwRI (New Horizons), USGS Astrogeology"
+}

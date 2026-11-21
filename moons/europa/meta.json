@@ -1,0 +1,41 @@
+{
+ "v": 1,
+ "built": "2026-11-21T08:56:22Z",
+ "radius_km": 1562.09,
+ "projection": "equirectangular, north up, east to the right; lon 0 at the centre",
+ "align": {
+  "candidates_noflip": {
+   "best_shift_1k": 0,
+   "ncc": 0.7222,
+   "ncc_shift0": 0.7222,
+   "ncc_roll180": -0.0002
+  },
+  "candidates_flip": {
+   "best_shift_1k": 850,
+   "ncc": 0.0132,
+   "ncc_shift0": -0.0009,
+   "ncc_roll180": 0.0035
+  },
+  "ncc": 0.5581,
+  "shift_px": 0,
+  "flip": false,
+  "applied": true,
+  "rolled": false,
+  "shift_8k": 0,
+  "centre_lon": 0.0
+ },
+ "max_tier": "8k",
+ "normal": "flat (128,128,255): relief is not derived from image brightness; no global DEM of Europa is available",
+ "colour": "previous site map (Lanczos to the top tier) at every scale, its own colours; mission detail L / G8(L) added with weight 0.8 Q where locally registered (phase correlation, residual <= 1.5 px @2k; 89 % of the data area)",
+ "colour_base": "previous site map",
+ "files": [
+  "europa_color_2k.webp",
+  "europa_color_4k.webp",
+  "europa_color_8k.webp",
+  "europa_normal_2k.webp",
+  "europa_normal_4k.webp",
+  "europa_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Europa Voyager / Galileo SSI Global Mosaic 500 m",
+ "credit": "NASA/JPL/DLR (Galileo SSI), NASA/JPL (Voyager), USGS Astrogeology"
+}
