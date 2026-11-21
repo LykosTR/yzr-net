@@ -7,6 +7,7 @@
   titan    : Cassini ISS P19658 global mosaic 4 km (938 nm, grey)
   dione    : Cassini + Voyager global mosaic 154 m (grey)
   iapetus  : Cassini + Voyager global mosaic 783 m (grey)
+  haumea   : Astra-Planetshine artist's impression (colour + bump), used as published
 No global DEM of these bodies exists on the USGS servers (only regional Galileo DTMs): the normal maps are flat
 (128, 128, 255) -- the client's micro-detail layer attaches to them; relief is never derived from image brightness.
 Pipeline per body (all px figures at the top tier, 8k; Titan's top tier is 4k = its source resolution):
@@ -133,6 +134,14 @@ BODIES['gonggong'] = dict(name='Gonggong', tno=True, terrain='umbriel', despot=2
 BODIES['sedna'] = dict(name='Sedna', tno=True, terrain='ariel', rot=(-112, 37, 74), seed=23, radius_km=497, top=8, mean=92,
                        contrast=0.85, relief_km=8, hl=1.35, rgb=(1.0, 0.74, 0.57), rgb2=(1.0, 0.68, 0.50), credit=_ILL,
                        source='ILLUSTRATIVE: Ariel terrain (artist map) rotated, recoloured to Sedna (deep red, geometric albedo 0.32)')
+# s46: Haumea -- Astra-Planetshine's "Haumea Artist's Impression v3" (colour + bump, equirectangular 8192 x 4096, made for a 3-axis
+# ellipsoid): the artist's colour map as published (no recolouring), relief from the bump map; the client scales the sphere mesh to the ellipsoid
+BODIES['haumea'] = dict(name='Haumea', direct=True, radius_km=798, relief_km=12, top=8,
+                        art=('https://drive.usercontent.google.com/download?id=1FlG7PgqQdc5jiMQfe_MYd7ms-HjTQfAe&export=download&confirm=t', 'haumea_v3_1.zip'),
+                        art_color='HaumeaColour.png', art_bump='HaumeaBump.png',
+                        credit="Astra-Planetshine (DeviantArt), artist's impression, used with permission",
+                        source="Astra-Planetshine \"Haumea Artist's Impression v3\" (deviantart.com/astra-planetshine/art/Haumea-Artist-s-Impression-v3-566021580): "
+                               "colour + bump maps, ILLUSTRATIVE (Haumea has never been imaged)")
 # all px at the top tier (8k); scaled with the working width
 MASK_COV, MASK_ERODE = 0.99, 5              # source pixel valid above this coverage; erosion drops the partial rim
 RAMP, PERT = 128, 48                        # gap fill ramp, starting 0..2*PERT px inside the data (wavy, no straight edge)
@@ -937,6 +946,58 @@ def build_art(key, cfg, raw, out_root, Wt=None):
     print('  %s done in %d s' % (key, time.time() - t0), flush=True)
 
 
+def build_direct(key, cfg, raw, out_root, Wt=None):
+    """artist's colour map as published (RGB, no recolouring) + tangent-space normal from the artist's bump map (true scale,
+    cfg['relief_km'] = height span of the bump range); no orientation change (lon 0 at the centre, north up)"""
+    t0 = time.time()
+    rawk = os.path.join(raw, key); os.makedirs(rawk, exist_ok=True)
+    out = os.path.join(out_root, key); os.makedirs(out, exist_ok=True)
+    top = cfg['top']
+    W, H = (Wt, Wt // 2) if Wt else SIZES[top]
+    print('== direct', key, W, 'x', H, flush=True)
+    A = Image.open(art_src(rawk, cfg, cfg['art_color'])).convert('RGB')
+    c8 = np.asarray(A.resize((W, H), Image.LANCZOS if A.size[0] < W else Image.BOX))
+    del A
+    B = Image.open(art_src(rawk, cfg, cfg['art_bump'])).convert('L')
+    B = np.asarray(B.resize((W, H), Image.BICUBIC if B.size[0] < W else Image.BOX)).astype(np.float32)
+    B = blur(B, 1.6 * W / 8192)                                       # 8-bit terraces of the painted bump
+    lo, hi = np.percentile(B, [0.5, 99.5])
+    hgt = (B - lo) / max(hi - lo, 1.0) * cfg['relief_km']
+    del B
+    Rk = cfg['radius_km']
+    lat_r = 90 - (np.arange(H) + 0.5) * 180 / H
+    dl, dp = 2 * np.pi / W, np.pi / H
+    cl = np.maximum(np.cos(np.radians(lat_r)), 0.02)[:, None]
+    hx = (np.roll(hgt, -1, 1) - np.roll(hgt, 1, 1)) / (2 * Rk * cl * dl)
+    up, dn = np.vstack([hgt[:1], hgt[:-1]]), np.vstack([hgt[1:], hgt[-1:]])
+    hy = (up - dn) / (2 * Rk * dp)
+    del hgt, up, dn
+    pw = smooth((np.abs(lat_r) - 84) / 5)[:, None]
+    hx, hy = hx * (1 - pw), hy * (1 - pw)
+    n = np.dstack([-hx, -hy, np.ones_like(hx)]).astype(np.float32)
+    n /= np.linalg.norm(n, axis=2, keepdims=True)
+    n8 = np.clip(np.rint((n * 0.5 + 0.5) * 255), 0, 255).astype(np.uint8)
+    print('  relief: slope rms %.3f' % float(np.sqrt((hx * hx + hy * hy).mean())), flush=True)
+    del n, hx, hy
+    files = []
+    for kk, (w, hh) in SIZES.items():
+        if (Wt is None and kk > top) or (Wt and w > W):
+            continue
+        cc = c8 if w == W else cv2.resize(c8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_color_%dk.webp' % (key, kk); webp(cc, os.path.join(out, nm), 90); files.append(nm)
+        nn = n8 if w == W else cv2.resize(n8, (w, hh), interpolation=cv2.INTER_AREA)
+        nm = '%s_normal_%dk.webp' % (key, kk); webp(nn, os.path.join(out, nm), 92); files.append(nm)
+    meta = {'v': 1, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'radius_km': Rk,
+            'projection': 'equirectangular, north up, east to the right, lon 0 at the centre; made by the artist for a 3-axis ellipsoid '
+                          '(the client maps it onto the scaled sphere mesh)', 'max_tier': '%dk' % top,
+            'ILLUSTRATIVE': "Haumea has never been imaged: artist's impression",
+            'normal': 'tangent space (x east, y north), true scale from the artist bump map on the mean radius, height span %g km' % cfg['relief_km'],
+            'colour': 'artist colour map as published (no recolouring), area-resampled',
+            'files': sorted(files), 'source': cfg['source'], 'credit': cfg['credit']}
+    json.dump(meta, open(os.path.join(out, 'meta.json'), 'w'), indent=1)
+    print('  %s done in %d s' % (key, time.time() - t0), flush=True)
+
+
 def hl_cap(L, c, W):
     """soft cap of bright spots relative to the surrounding terrain (lowpass ~1/40 of the circumference): ratios above
     c are compressed (tanh), the dark side untouched -- a pure-white painted crater / ring no longer stands out"""
@@ -1227,7 +1288,7 @@ def main():
     Wt = int(opt['size']) if 'size' in opt else None
     t0 = time.time()
     for k in keys:
-        (build_tno if BODIES[k].get('tno') else build_art if BODIES[k].get('art') else build)(k, BODIES[k], raw, out, Wt)
+        (build_tno if BODIES[k].get('tno') else build_direct if BODIES[k].get('direct') else build_art if BODIES[k].get('art') else build)(k, BODIES[k], raw, out, Wt)
     print('done in', round(time.time() - t0), 's')
 
 
