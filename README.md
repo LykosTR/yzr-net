@@ -6,9 +6,10 @@
 
 [yzrnet.blogspot.com](https://yzrnet.blogspot.com/)
 
-[![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
+[![Kod: MIT](https://img.shields.io/badge/kod-MIT-blue.svg)](LICENSE)
+[![Veri: CC BY 4.0](https://img.shields.io/badge/veri-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA.md)
 ![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.4.5-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.4.6-2E7D32)
 
 </div>
 
@@ -26,7 +27,7 @@ Depo, YZR Net'in web arayüzünden ziyade onu destekleyen veri altyapısına oda
 
 ## 📡 Açık veri akışları
 
-GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük dosyalara çevirir ve **`data`** dalına yayımlar (büyük kataloglar **`catalog`** dalında). Site bu dosyaları doğrudan `raw.githubusercontent.com` üzerinden okur (CORS `*`); dosya yoksa ya da eskiyse ilgili servise düşer. API anahtarı ya da gizli bilgi kullanılmaz.
+GitHub Actions açık veri setlerini indirir, tarayıcı için küçük dosyalara dönüştürür ve **`data`** dalına (büyük kataloglar **`catalog`** dalına) yayımlar. Site bu dosyaları `raw.githubusercontent.com` üzerinden okur; dosya yoksa ilgili servise düşer. API anahtarı veya gizli bilgi kullanılmaz.
 
 | Akış | Ne | Kaynak | Güncelleme |
 |---|---|---|---|
@@ -40,17 +41,16 @@ GitHub Actions, herkese açık veri setlerini indirir, tarayıcı dostu küçük
 | Yıldız kataloğu | En parlak 1 milyon yıldız | ESA Gaia DR3, HYG v4.1 (CC BY-SA 4.0) | haftada bir |
 | Galaksi kataloğu | ~50 bin galaksi | HyperLEDA | ayda bir |
 | Samanyolu panoraması | 360° galaktik görüntü | ESO / S. Brunier (CC BY 4.0) | ayda bir |
-| Yüzey haritaları | Ay, Merkür, Venüs, Mars, Ceres, Pluto ve büyük uyduların renk ve kabartma haritaları | USGS Astrogeology, NASA (LRO, MESSENGER, Magellan, Viking, MOLA, Dawn, New Horizons, Galileo, Voyager, Cassini), DLR | elle |
-| Diğer cisim dokuları | Dev gezegenler, cüce gezegenler, asteroit kayası | NASA/JPL ve görev ekipleri | elle |
-| Dünya atmosferi | Saçılma tabloları (gökyüzü, alacakaranlık, pus) | Hillaire (2020), Bruneton (2017) modelleri | elle |
-| Bulut katmanı | Dünya bulut dokuları | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | değişmez |
+| Yüzey haritaları | Ay, Merkür, Venüs, Mars, Ceres, Pluto ve büyük uyduların renk ve kabartma haritaları | USGS Astrogeology, NASA (LRO, MESSENGER, Magellan, Viking, MOLA, Dawn, New Horizons, Galileo, Voyager, Cassini), DLR | — |
+| Diğer cisim dokuları | Dev gezegenler, asteroit kayası; Uranüs uyduları, Haumea, Gonggong ve Sedna (temsilî) | NASA/JPL ve görev ekipleri; [Astra-Planetshine](https://www.deviantart.com/astra-planetshine) (sanatçının izniyle) | — |
+| Dünya atmosferi | Saçılma tabloları (gökyüzü, alacakaranlık, pus) | Hillaire (2020), Bruneton (2017) modelleri | — |
+| Bulut katmanı | Dünya bulut dokuları | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | — |
+| Dünya haritası ve hava | Uydu görüntüsü, 3B harita, hava durumu (depoda tutulmaz) | Esri, ArcGIS, Open-Meteo (doğrudan servisten) | canlı |
 
-Uranüs uyduları ile Gonggong ve Sedna haritaları, [Astra-Planetshine](https://www.deviantart.com/astra-planetshine/art/Uranus-Project-Missing-Data-Titania-646920848) çalışmasına dayanır (sanatçının izniyle, atıf ile). Gonggong ve Sedna temsilî küreledir. Uydu görüntüsü (Esri), 3B harita (ArcGIS) ve hava durumu (Open-Meteo) doğrudan ilgili servislerden okunur.
+## ⚖️ Lisans ve atıf
 
-## 📜 Veri hakları
+- **Kod** (betikler, iş akışları): [MIT](LICENSE). Kopyalarda telif satırı korunmalıdır.
+- **Bu deponun ürettiği veri dosyaları:** [CC BY 4.0](LICENSE-DATA.md). Kullanan herkes **“YZR Net”** adını ve [yzrnet.blogspot.com](https://yzrnet.blogspot.com/) ya da [github.com/LykosTR/yzr-net](https://github.com/LykosTR/yzr-net) bağlantısını belirtmelidir.
+- Kaynağının lisansı daha sıkı olan veriler o lisansla dağıtılır (yıldız kataloğu CC BY-SA 4.0, bulut katmanı AGPL-3.0). Üçüncü taraf kaynakların koşulları ayrıca geçerlidir.
 
-Üçüncü taraf veriler kendi sağlayıcılarının lisans ve kullanım koşullarına tabidir. MIT lisansı yalnızca bu deponun kodunu kapsar.
-
-## ⚖️ Lisans
-
-[MIT](LICENSE) © 2026 YZR Net
+© 2026 YZR Net
