@@ -4,12 +4,12 @@
 
 # YZR Net
 
-[yzrnet.blogspot.com](https://yzrnet.blogspot.com/)
+[yzrnet.com](https://yzrnet.com/)
 
 [![Kod: MIT](https://img.shields.io/badge/kod-MIT-blue.svg)](LICENSE)
 [![Veri: CC BY 4.0](https://img.shields.io/badge/veri-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA.md)
-![Platform](https://img.shields.io/badge/platform-Blogger-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v2.4.9-2E7D32)
+![Platform](https://img.shields.io/badge/platform-Cloudflare-F38020)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v3.4.9-2E7D32)
 
 </div>
 
@@ -50,7 +50,7 @@ GitHub Actions açık veri setlerini indirir, tarayıcı için küçük dosyalar
 ## ⚖️ Lisans ve atıf
 
 - **Kod** (betikler, iş akışları): [MIT](LICENSE). Kopyalarda telif satırı korunmalıdır.
-- **Bu deponun ürettiği veri dosyaları:** [CC BY 4.0](LICENSE-DATA.md). Kullanan herkes **“YZR Net”** adını ve [yzrnet.blogspot.com](https://yzrnet.blogspot.com/) ya da [github.com/LykosTR/yzr-net](https://github.com/LykosTR/yzr-net) bağlantısını belirtmelidir.
+- **Bu deponun ürettiği veri dosyaları:** [CC BY 4.0](LICENSE-DATA.md). Kullanan herkes **“YZR Net”** adını ve [yzrnet.com](https://yzrnet.com/) ya da [github.com/LykosTR/yzr-net](https://github.com/LykosTR/yzr-net) bağlantısını belirtmelidir.
 - Kaynağının lisansı daha sıkı olan veriler o lisansla dağıtılır (yıldız kataloğu CC BY-SA 4.0, bulut katmanı AGPL-3.0). Üçüncü taraf kaynakların koşulları ayrıca geçerlidir.
 
 © 2026 YZR Net

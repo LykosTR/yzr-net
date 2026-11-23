@@ -11,9 +11,9 @@ node_modules/
 *.log
 __pycache__/
 
-# local-only (site source, not published here)
-templates/
-themes.xml
+# local-only, never published here (already excluded by /* above):
+#   site/     -> the website, its own private repo (LykosTR/yzrnet)
+#   blogger/  -> archive of the old Blogger site (themes.xml, templates, apps-script)
 
 # local-only backups (not published)
 .github/backup/
