@@ -47,6 +47,19 @@ GitHub Actions açık veri setlerini indirir, tarayıcı için küçük dosyalar
 | Bulut katmanı | Dünya bulut dokuları | [SatVisor](https://github.com/satvisorcom/satvisor), AGPL-3.0 | — |
 | Dünya haritası ve hava | Uydu görüntüsü, 3B harita, hava durumu (depoda tutulmaz) | Esri, ArcGIS, Open-Meteo (doğrudan servisten) | canlı |
 
+## 🧰 Sitedeki araçların kaynakları
+
+Sitedeki haritalar ve araçlar bu servisleri kullanır; atıflar ekranda değil burada ve [Hakkımızda](https://yzrnet.com/about#ab-veri) sayfasında toplanır.
+
+| Ne | Nerede | Kaynak |
+|---|---|---|
+| Uydu görüntüsü | IP sorgulama haritası, ana sayfadaki Dünya | Esri World Imagery: Esri, Maxar, Earthstar Geographics |
+| Harita, yer adları, yollar | IP sorgulama haritası | [OpenFreeMap](https://openfreemap.org/) (OpenMapTiles), © [OpenStreetMap](https://www.openstreetmap.org/copyright) katkıda bulunanlar |
+| Arazi yükseltisi | IP sorgulama haritası, Arazi katmanı | [Mapterhorn](https://mapterhorn.com/) |
+| IP konumu ve ağ bilgileri | IP sorgulama | RIPEstat, RDAP, ipapi.is, ip-api, country.is, OpenStreetMap Nominatim, Cloudflare DNS, ipify; bayraklar flagcdn.com |
+| Döviz kurları | Birim çevirici | [Frankfurter](https://frankfurter.dev/) (Avrupa Merkez Bankası) |
+| Arka plan silme modeli | Arka plan silme | IMG.LY background-removal, IS-Net (AGPL-3.0) |
+
 ## ⚖️ Lisans ve atıf
 
 - **Kod** (betikler, iş akışları): [MIT](LICENSE). Kopyalarda telif satırı korunmalıdır.
