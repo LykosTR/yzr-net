@@ -9,7 +9,7 @@
 [![Kod: MIT](https://img.shields.io/badge/kod-MIT-blue.svg)](LICENSE)
 [![Veri: CC BY 4.0](https://img.shields.io/badge/veri-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA.md)
 ![Platform](https://img.shields.io/badge/platform-Cloudflare-F38020)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v3.4.9-2E7D32)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v3.5.1-2E7D32)
 
 </div>
 
@@ -21,13 +21,31 @@ YZR Net, farklı alanlarda ihtiyaç duyulabilecek araçlar, uygulamalar ve dijit
 
 ## 🧭 Açık Veri Altyapısı
 
-Bu depo, YZR Net'in çeşitli özelliklerinde yararlandığı açık veri akışlarını sağlar. Farklı kamuya açık kaynaklardan elde edilen veriler, web ortamında kullanılmaya uygun biçimde hazırlanarak yayımlanır. Rüzgâr, deprem ve yangın gibi farklı alanlara ait veriler, bu altyapının sunduğu içerikler arasındadır.
+Bu depo, YZR Net'in (özellikle 3B evren uygulaması Cosmos'un) kullandığı açık veri akışlarını üretir ve yayımlar. Farklı kamuya açık kaynaklardan alınan veriler, tarayıcıda doğrudan kullanılabilecek küçük dosyalara dönüştürülür. Depo web arayüzüne değil, bu veri altyapısına odaklanır. Kullanılan veriler kendi kaynaklarının lisans ve atıf koşullarına tabidir.
 
-Depo, YZR Net'in web arayüzünden ziyade onu destekleyen veri altyapısına odaklanır. Kullanılan veriler, kendi kaynaklarının lisans ve atıf koşullarına tabidir.
+```mermaid
+flowchart LR
+  S["Açık kaynaklar<br/>NOAA, USGS, NASA, ESA, ..."] --> A["GitHub Actions<br/>zamanlanmış iş akışları"]
+  A -->|"indir, dönüştür, kontrol et"| R["Bu depo<br/>data ve catalog dalları"]
+  R --> J["jsDelivr CDN<br/>(yedek: raw.githubusercontent)"]
+  J --> Y["yzrnet.com<br/>Cosmos ve araçlar"]
+```
+
+### Nasıl çalışır
+
+1. **Klasörler.** `main` dalında her akışın kendi klasörü vardır (`data/wind`, `data/stars`, `data/asteroids` ...): üretici betik (çoğunlukla Python) ve gerekirse küçük bir README. `.github/workflows/` her akış için bir iş akışı, `.github/scripts/publish.sh` ortak yayın betiğidir.
+2. **Üretim.** Her iş akışı zamanlanmış çalışır (GitHub Actions `cron`) ve elle de başlatılabilir. Kaynağı indirir, dosya boyutunu ve içeriği denetler, sonucu üretir. Denetimden geçmezse yayımlanmaz, önceki sürüm yerinde kalır. Gizli bilgi veya API anahtarı gerekmez.
+3. **Yayın.** `publish.sh` sonucu, geçmişi tutmayan (tek commit'lik) bir dala yazar: sık güncellenen ve küçük akışlar **`data`** dalına, büyük kataloglar (yıldız, asteroit, galaksi, Samanyolu) **`catalog`** dalına. Böylece depo geçmişi şişmez.
+4. **Dağıtım.** Dosyalar önce **jsDelivr** (`cdn.jsdelivr.net/gh/LykosTR/yzr-net@data/...`) üzerinden, olmazsa **`raw.githubusercontent.com`** üzerinden okunur. jsDelivr dosyaları kenarda saklar; bu yüzden her yayından sonra güncellenen dosyaların önbelleği temizlenir (en geç birkaç dakika içinde yeni sürüm gelir).
+5. **Kullanım.** Cosmos ve araçlar bu dosyaları tarayıcıda okur. Dosya alınamazsa ilgili canlı servise düşer.
+
+### Biçimler ve sıklık
+
+- **İkili (`.bin`) ve JSON:** büyük sayısal diziler (rüzgâr ızgarası, yıldız ve galaksi katmanları) küçük ikili dosyalardır; yanlarındaki `meta.json` sürüm ve boyut bilgisini verir. Küçük listeler (yörüngeler, depremler) JSON'dur.
+- **Doku ve harita:** yüzey haritaları ve bulut katmanları görüntü dosyalarıdır (WebP ve benzeri), parçalara bölünmüş olabilir.
+- **Sıklık:** aşağıdaki tabloda. Zamanlama olmayan akışlar (yüzey haritaları, dokular, atmosfer tabloları) yalnızca kaynak ya da yöntem değişince elle yeniden üretilir.
 
 ## 📡 Açık veri akışları
-
-GitHub Actions açık veri setlerini indirir, tarayıcı için küçük dosyalara dönüştürür ve **`data`** dalına (büyük kataloglar **`catalog`** dalına) yayımlar. Site bu dosyaları `raw.githubusercontent.com` üzerinden okur; dosya yoksa ilgili servise düşer. API anahtarı veya gizli bilgi kullanılmaz.
 
 | Akış | Ne | Kaynak | Güncelleme |
 |---|---|---|---|
