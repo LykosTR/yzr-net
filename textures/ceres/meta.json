@@ -1,0 +1,17 @@
+{
+ "v": 1,
+ "built": "2026-11-22T22:42:43Z",
+ "size": [
+  4096,
+  2048
+ ],
+ "tiers": [
+  2,
+  4
+ ],
+ "files": [
+  "ceres_color_2k.webp",
+  "ceres_color_4k.webp"
+ ],
+ "source": "previous Cosmos texture (Blogger tiles, see tiles.json)"
+}

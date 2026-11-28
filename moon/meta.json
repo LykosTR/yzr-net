@@ -1,0 +1,17 @@
+{
+ "v": 1,
+ "built": "2026-11-17T22:52:02Z",
+ "radius_km": 1737.4,
+ "projection": "equirectangular, lon 0 at centre, north up",
+ "normal": "tangent space x=east y=north z=up (OpenGL), true scale from LOLA 64 ppd",
+ "files": [
+  "moon_color_2k.webp",
+  "moon_color_4k.webp",
+  "moon_color_8k.webp",
+  "moon_normal_2k.webp",
+  "moon_normal_4k.webp",
+  "moon_normal_8k.webp"
+ ],
+ "source": "NASA SVS 4720 CGI Moon Kit: LROC WAC Hapke-normalized colour (2025) + LOLA ldem_64",
+ "credit": "NASA's Scientific Visualization Studio; LRO LROC (NASA/GSFC/Arizona State University); LRO LOLA (NASA/GSFC)"
+}

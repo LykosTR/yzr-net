@@ -1,0 +1,28 @@
+{
+ "v": 1,
+ "built": "2026-11-21T22:35:01Z",
+ "radius_km": 1353.4,
+ "projection": "equirectangular, north up, east to the right; ROTATED 180 deg about the sub-planet axis (south up: the client mesh +Y is the IAU south pole of this retrograde moon); lon 0 at the centre",
+ "align": {
+  "applied": false,
+  "ncc": null,
+  "note": "no previous site map: USGS orientation (lon 0 at the centre)",
+  "rolled": false,
+  "shift_8k": 0,
+  "centre_lon": 0.0
+ },
+ "max_tier": "8k",
+ "normal": "tangent space x=east y=north z=up, IMAGE-DERIVED (no global DEM): band-pass luminance (6 px at 8k) as height, bright = high, RMS slope 5 deg where the mosaic is sharp (x Q), x 0.7 in filled areas",
+ "colour": "the mosaic's own colour, saturation x0.15; harsh terminator lighting soft-clamped to the local median; low-resolution areas de-ringed; gaps filled (wavy ramp <= 128 px, ring inpaint); polar caps de-rippled in an azimuthal grid; multiplicative sphere-noise grain (0.6 x local detail); luminance mean 124 (from the measured geometric albedo) (tone power 1.000); no blue cast; unseen areas: smooth continuation of the data + band-pass detail of the body's own imaged terrain seen through rotations of the sphere (sources |lat| <= 60; a plausible stand-in, not observed); low-resolution areas carry band-pass detail of Triton's own sharp terrain through 5 sphere rotations, weight (1-Q)",
+ "colour_base": "mission mosaic (own)",
+ "files": [
+  "triton_color_2k.webp",
+  "triton_color_4k.webp",
+  "triton_color_8k.webp",
+  "triton_normal_2k.webp",
+  "triton_normal_4k.webp",
+  "triton_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Triton Voyager 2 Global Color Mosaic 600 m",
+ "credit": "NASA/JPL (Voyager 2), USGS Astrogeology"
+}

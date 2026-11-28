@@ -1,0 +1,41 @@
+{
+ "v": 1,
+ "built": "2026-11-21T22:24:12Z",
+ "radius_km": 1821.46,
+ "projection": "equirectangular, north up, east to the right; lon 0 at the centre",
+ "align": {
+  "candidates_noflip": {
+   "best_shift_1k": 0,
+   "ncc": 0.8973,
+   "ncc_shift0": 0.8973,
+   "ncc_roll180": 0.005
+  },
+  "candidates_flip": {
+   "best_shift_1k": 952,
+   "ncc": 0.0156,
+   "ncc_shift0": 0.0028,
+   "ncc_roll180": 0.0003
+  },
+  "ncc": 0.8681,
+  "shift_px": 0,
+  "flip": false,
+  "applied": true,
+  "rolled": false,
+  "shift_8k": 0,
+  "centre_lon": 0.0
+ },
+ "max_tier": "8k",
+ "normal": "tangent space x=east y=north z=up, IMAGE-DERIVED (no global DEM): band-pass luminance (6 px at 8k) as height, bright = high, RMS slope 5 deg where the mosaic is sharp (x Q), x 0.7 in filled areas",
+ "colour": "the mosaic's own colour, saturation x0.85; harsh terminator lighting soft-clamped to the local median; low-resolution areas de-ringed; gaps filled (wavy ramp <= 128 px, ring inpaint); polar caps de-rippled in an azimuthal grid; multiplicative sphere-noise grain (0.6 x local detail); luminance mean of the previous map (tone power 1.000); no blue cast; low-resolution areas carry band-pass detail of Io's own sharp terrain through 5 sphere rotations, weight (1-Q)",
+ "colour_base": "mission mosaic (own)",
+ "files": [
+  "io_color_2k.webp",
+  "io_color_4k.webp",
+  "io_color_8k.webp",
+  "io_normal_2k.webp",
+  "io_normal_4k.webp",
+  "io_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Io Galileo SSI / Voyager Global Mosaic ClrMerge 1 km",
+ "credit": "NASA/JPL/DLR (Galileo SSI), NASA/JPL (Voyager), USGS Astrogeology"
+}

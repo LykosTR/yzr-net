@@ -1,0 +1,18 @@
+{
+ "v": 1,
+ "built": "2026-11-18T18:19:43Z",
+ "radius_km": 6051.8,
+ "projection": "equirectangular, lon 0 at centre, north up",
+ "normal": "tangent space x=east y=north z=up (OpenGL), true scale from Magellan topography 4641 m",
+ "colour": "previous site Venus map (Magellan-based, old_tiles.txt), rotated 180 deg to north up; fine band (<15 px) from Magellan C3-MDIR radar (median high-pass, FFT destriped)",
+ "files": [
+  "venus_color_2k.webp",
+  "venus_color_4k.webp",
+  "venus_color_8k.webp",
+  "venus_normal_2k.webp",
+  "venus_normal_4k.webp",
+  "venus_normal_8k.webp"
+ ],
+ "source": "colour: previous site Venus map (Magellan-based); relief: USGS Astrogeology Venus Magellan Topography Global 4641m v02",
+ "credit": "NASA/JPL (Magellan); USGS Astrogeology"
+}

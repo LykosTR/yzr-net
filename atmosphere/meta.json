@@ -1,0 +1,21 @@
+{
+ "version": 1,
+ "built": "2026-11-19T17:30:46Z",
+ "exaggeration": 1.6,
+ "turbidity": 2.5,
+ "top_km": 100.0,
+ "transmittance": [
+  256,
+  64
+ ],
+ "multiscatter": [
+  32,
+  32
+ ],
+ "irradiance": [
+  64,
+  1,
+  -0.35
+ ],
+ "header": "magic SRAT + float32[63]: X, rTop, hR, hM, ozC, ozW, bR(3), bMs, bMa, bO(3), g, TW, TH, MW, MH, albedo, IW, IMU0 (units: Earth radii); tables T, M, I (sky irradiance, mu_s from IMU0 to 1)"
+}

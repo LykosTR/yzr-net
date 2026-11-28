@@ -1,0 +1,9 @@
+{
+ "v": 1,
+ "built": "2026-11-22T22:42:43Z",
+ "files": [
+  "asteroidRock_color.webp",
+  "asteroidRock_roughness.webp"
+ ],
+ "source": "previous Cosmos texture (see tiles.json)"
+}

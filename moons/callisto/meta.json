@@ -1,0 +1,41 @@
+{
+ "v": 1,
+ "built": "2026-11-21T22:25:56Z",
+ "radius_km": 2409.3,
+ "projection": "equirectangular, north up, east to the right; rolled onto the previous site map, lon -0.088 at the centre",
+ "align": {
+  "candidates_noflip": {
+   "best_shift_1k": 0,
+   "ncc": 0.8585,
+   "ncc_shift0": 0.8585,
+   "ncc_roll180": 0.0024
+  },
+  "candidates_flip": {
+   "best_shift_1k": 643,
+   "ncc": 0.0125,
+   "ncc_shift0": 0.0052,
+   "ncc_roll180": 0.0003
+  },
+  "ncc": 0.7364,
+  "shift_px": 2,
+  "flip": false,
+  "applied": true,
+  "rolled": true,
+  "shift_8k": 2,
+  "centre_lon": -0.088
+ },
+ "max_tier": "8k",
+ "normal": "tangent space x=east y=north z=up, IMAGE-DERIVED (no global DEM): band-pass luminance (6 px at 8k) as height, bright = high, RMS slope 8 deg where the mosaic is sharp (x Q), x 0.7 in filled areas",
+ "colour": "previous site map (Lanczos to the top tier) at every scale, its own colours; mission detail L / G8(L) added with weight 0.8 Q where locally registered (phase correlation, residual <= 1.5 px @2k; 98 % of the data area)",
+ "colour_base": "previous site map",
+ "files": [
+  "callisto_color_2k.webp",
+  "callisto_color_4k.webp",
+  "callisto_color_8k.webp",
+  "callisto_normal_2k.webp",
+  "callisto_normal_4k.webp",
+  "callisto_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Callisto Voyager / Galileo SSI Global Mosaic 1 km",
+ "credit": "NASA/JPL/DLR (Galileo SSI), NASA/JPL (Voyager), USGS Astrogeology"
+}

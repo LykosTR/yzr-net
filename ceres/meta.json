@@ -1,0 +1,37 @@
+{
+ "v": 1,
+ "built": "2026-11-18T22:21:08Z",
+ "radius_km": 470.0,
+ "projection": "equirectangular, north up, east to the right; lon 0 at the centre",
+ "align": {
+  "candidates_noflip": {
+   "best_shift_1k": 31,
+   "ncc": 0.0076,
+   "ncc_shift0": -0.0008,
+   "ncc_roll180": 0.0051
+  },
+  "candidates_flip": {
+   "best_shift_1k": 840,
+   "ncc": 0.0078,
+   "ncc_shift0": -0.0025,
+   "ncc_roll180": -0.0011
+  },
+  "ncc": 0.0028,
+  "shift_8k": 6722,
+  "flip": true,
+  "applied": false,
+  "centre_lon": 0.0
+ },
+ "normal": "tangent space x=east y=north z=up (OpenGL), true scale from the Dawn HAMO DTM (DLR, 60 ppd), oblateness removed",
+ "colour": "Dawn mosaic albedo x the previous site map mean tint (saturation 0.5); |lat| > 60..75 lighting flattened (L / local mean, soft clamp 0.7..1.3); shadows filled (ramp 24 px), south pole (wavy ramp 128 px, ring mean) + matched grain 0.45; luminance mean/std of the previous map; highlight soft knee 0.9; pole rows averaged; relief occlusion 0.18",
+ "files": [
+  "ceres_color_2k.webp",
+  "ceres_color_4k.webp",
+  "ceres_color_8k.webp",
+  "ceres_normal_2k.webp",
+  "ceres_normal_4k.webp",
+  "ceres_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Ceres Dawn FC DLR global mosaic 59ppd/140m (Feb 2016), Ceres Dawn FC HAMO DTM DLR global 60ppd (Oct 2016)",
+ "credit": "NASA/JPL-Caltech/UCLA/MPS/DLR/IDA (Dawn), USGS Astrogeology"
+}

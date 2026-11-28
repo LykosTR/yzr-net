@@ -1,0 +1,19 @@
+{
+ "v": 1,
+ "built": "2026-11-22T22:42:43Z",
+ "size": [
+  20000,
+  10000
+ ],
+ "tiers": [
+  2,
+  4,
+  8
+ ],
+ "files": [
+  "europa_color_2k.webp",
+  "europa_color_4k.webp",
+  "europa_color_8k.webp"
+ ],
+ "source": "previous Cosmos texture (Blogger tiles, see tiles.json)"
+}

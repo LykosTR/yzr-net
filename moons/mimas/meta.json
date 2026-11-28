@@ -1,0 +1,19 @@
+{
+ "v": 1,
+ "built": "2026-11-21T22:28:15Z",
+ "radius_km": 198.2,
+ "projection": "equirectangular, north up, east to the right, lon 0 at the centre",
+ "max_tier": "8k",
+ "HYBRID": "real large-scale albedo (USGS/DLR mosaic low-passed 1.5 deg) x artist terrain detail (Astra-Planetshine oberon, rotated) + analytic crater (139 km crater at -1.7 N, 248.2 E)",
+ "normal": "tangent space (x east, y north), true scale: artist bump high-passed (span 8 km) + analytic crater profiles",
+ "files": [
+  "mimas_color_2k.webp",
+  "mimas_color_4k.webp",
+  "mimas_color_8k.webp",
+  "mimas_normal_2k.webp",
+  "mimas_normal_4k.webp",
+  "mimas_normal_8k.webp"
+ ],
+ "source": "DLR Cassini ISS Mimas global basemap (June 2017), USGS Astrogeology mosaic archive + Astra-Planetshine \"Uranus Project Missing Data\" terrain",
+ "credit": "NASA/JPL/Space Science Institute (Cassini ISS), DLR (Roatsch et al.), USGS Astrogeology; Astra-Planetshine (deviantart.com/astra-planetshine, \"Uranus Project Missing Data\"); NASA/JPL (Voyager 2), USGS Astrogeology (T. Becker), JPL Solar System Simulator"
+}

@@ -1,0 +1,20 @@
+{
+ "v": 1,
+ "built": "2026-11-21T22:38:20Z",
+ "radius_km": 497,
+ "projection": "equirectangular, north up, east to the right",
+ "max_tier": "8k",
+ "ILLUSTRATIVE": "no spacecraft image of Sedna exists: the terrain is Ariel's (artist's full-globe map) rotated by (-112, 37, 74) deg, recoloured to the measured colour / albedo",
+ "normal": "tangent space (x east, y north), true scale from the artist's bump map, height span 8 km",
+ "colour": "measured colour (1.0, 0.74, 0.57) with provinces (1.0, 0.68, 0.5), luminance mean 92",
+ "files": [
+  "sedna_color_2k.webp",
+  "sedna_color_4k.webp",
+  "sedna_color_8k.webp",
+  "sedna_normal_2k.webp",
+  "sedna_normal_4k.webp",
+  "sedna_normal_8k.webp"
+ ],
+ "source": "ILLUSTRATIVE: Ariel terrain (artist map) rotated, recoloured to Sedna (deep red, geometric albedo 0.32)",
+ "credit": "Astra-Planetshine (deviantart.com/astra-planetshine, \"Uranus Project Missing Data\"), recoloured; colours: published TNO photometry"
+}

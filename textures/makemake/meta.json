@@ -1,0 +1,20 @@
+{
+ "v": 1,
+ "built": "2026-11-22T22:42:43Z",
+ "size": [
+  4096,
+  2048
+ ],
+ "tiers": [
+  2,
+  4
+ ],
+ "files": [
+  "makemake_color_2k.webp",
+  "makemake_color_4k.webp",
+  "makemake_normal_2k.webp",
+  "makemake_normal_4k.webp"
+ ],
+ "source": "previous Cosmos texture (Blogger tiles, see tiles.json)",
+ "normal": "tangent space x=east y=north z=up, IMAGE-DERIVED (no DEM): band-pass luminance as height, bright = high, RMS slope 4 deg"
+}

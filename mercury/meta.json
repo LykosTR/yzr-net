@@ -1,0 +1,18 @@
+{
+ "v": 1,
+ "built": "2026-11-17T23:14:01Z",
+ "radius_km": 2439.4,
+ "projection": "equirectangular, lon 0 at centre, north up",
+ "normal": "tangent space x=east y=north z=up (OpenGL), true scale from the MESSENGER 665 m DEM",
+ "colour": "MDIS MD3 luminance (mean 140, std 30) + 0.18 of its chroma, faint warm tint; gaps inpainted",
+ "files": [
+  "mercury_color_2k.webp",
+  "mercury_color_4k.webp",
+  "mercury_color_8k.webp",
+  "mercury_normal_2k.webp",
+  "mercury_normal_4k.webp",
+  "mercury_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: MESSENGER MDIS MD3 Color Mosaic Global 665m, MESSENGER USGS DEM Global 665m v2",
+ "credit": "NASA/Johns Hopkins University Applied Physics Laboratory/Carnegie Institution of Washington; USGS Astrogeology"
+}

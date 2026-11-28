@@ -1,0 +1,41 @@
+{
+ "v": 1,
+ "built": "2026-11-21T22:25:17Z",
+ "radius_km": 2632.345,
+ "projection": "equirectangular, north up, east to the right; lon 0 at the centre",
+ "align": {
+  "candidates_noflip": {
+   "best_shift_1k": 0,
+   "ncc": 0.7096,
+   "ncc_shift0": 0.7096,
+   "ncc_roll180": 0.0057
+  },
+  "candidates_flip": {
+   "best_shift_1k": 388,
+   "ncc": 0.0126,
+   "ncc_shift0": -0.0034,
+   "ncc_roll180": 0.0066
+  },
+  "ncc": 0.5653,
+  "shift_px": 0,
+  "flip": false,
+  "applied": true,
+  "rolled": false,
+  "shift_8k": 0,
+  "centre_lon": 0.0
+ },
+ "max_tier": "8k",
+ "normal": "tangent space x=east y=north z=up, IMAGE-DERIVED (no global DEM): band-pass luminance (6 px at 8k) as height, bright = high, RMS slope 7 deg where the mosaic is sharp (x Q), x 0.7 in filled areas",
+ "colour": "previous site map (Lanczos to the top tier) at every scale, its own colours; mission detail L / G8(L) added with weight 0.8 Q where locally registered (phase correlation, residual <= 1.5 px @2k; 55 % of the data area)",
+ "colour_base": "previous site map",
+ "files": [
+  "ganymede_color_2k.webp",
+  "ganymede_color_4k.webp",
+  "ganymede_color_8k.webp",
+  "ganymede_normal_2k.webp",
+  "ganymede_normal_4k.webp",
+  "ganymede_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Ganymede Voyager / Galileo SSI Global Mosaic 1 km, Ganymede Voyager / Galileo SSI Global Color Mosaic 1435 m",
+ "credit": "NASA/JPL/DLR (Galileo SSI), NASA/JPL (Voyager), USGS Astrogeology"
+}

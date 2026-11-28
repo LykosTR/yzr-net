@@ -1,0 +1,19 @@
+{
+ "v": 1,
+ "built": "2026-11-22T22:42:43Z",
+ "size": [
+  11520,
+  5760
+ ],
+ "tiers": [
+  2,
+  4,
+  8
+ ],
+ "files": [
+  "ganymede_color_2k.webp",
+  "ganymede_color_4k.webp",
+  "ganymede_color_8k.webp"
+ ],
+ "source": "previous Cosmos texture (Blogger tiles, see tiles.json)"
+}

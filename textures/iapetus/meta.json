@@ -1,0 +1,23 @@
+{
+ "v": 1,
+ "built": "2026-11-22T22:42:43Z",
+ "size": [
+  11520,
+  5760
+ ],
+ "tiers": [
+  2,
+  4,
+  8
+ ],
+ "files": [
+  "iapetus_color_2k.webp",
+  "iapetus_color_4k.webp",
+  "iapetus_color_8k.webp",
+  "iapetus_normal_2k.webp",
+  "iapetus_normal_4k.webp",
+  "iapetus_normal_8k.webp"
+ ],
+ "source": "previous Cosmos texture (Blogger tiles, see tiles.json)",
+ "normal": "tangent space x=east y=north z=up, IMAGE-DERIVED (no DEM): band-pass luminance as height, bright = high, RMS slope 6 deg"
+}

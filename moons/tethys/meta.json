@@ -1,0 +1,19 @@
+{
+ "v": 1,
+ "built": "2026-11-21T22:31:50Z",
+ "radius_km": 531.1,
+ "projection": "equirectangular, north up, east to the right, lon 0 at the centre",
+ "max_tier": "8k",
+ "HYBRID": "real large-scale albedo (USGS/DLR mosaic low-passed 1.5 deg) x artist terrain detail (Astra-Planetshine umbriel, rotated) + analytic crater (445 km crater at 32.8 N, 231.1 E, trough Ithaca Chasma)",
+ "normal": "tangent space (x east, y north), true scale: artist bump high-passed (span 9 km) + analytic crater profiles",
+ "files": [
+  "tethys_color_2k.webp",
+  "tethys_color_4k.webp",
+  "tethys_color_8k.webp",
+  "tethys_normal_2k.webp",
+  "tethys_normal_4k.webp",
+  "tethys_normal_8k.webp"
+ ],
+ "source": "USGS Astrogeology: Tethys Cassini Global Mosaic 293 m + Astra-Planetshine \"Uranus Project Missing Data\" terrain",
+ "credit": "NASA/JPL/Space Science Institute (Cassini ISS), NASA/JPL (Voyager), USGS Astrogeology; Astra-Planetshine (deviantart.com/astra-planetshine, \"Uranus Project Missing Data\"); NASA/JPL (Voyager 2), USGS Astrogeology (T. Becker), JPL Solar System Simulator"
+}

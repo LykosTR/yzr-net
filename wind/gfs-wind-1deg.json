@@ -1,0 +1,14 @@
+{
+ "source": "NOAA GFS 1.00 deg via NOMADS grib filter (UGRD/VGRD 10 m above ground)",
+ "refTime": "2026-11-28T06:00:00Z",
+ "forecastHour": 0,
+ "nx": 360,
+ "ny": 181,
+ "la1": 90,
+ "lo1": 0,
+ "dx": 1,
+ "dy": 1,
+ "scale": 0.01,
+ "order": "u,v",
+ "generated": "2026-11-28T13:27:18Z"
+}
