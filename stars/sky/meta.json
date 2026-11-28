@@ -1,0 +1,1 @@
+{"at":1795349378252,"n":1000000,"tiers":[50000,250000,1000000],"rec":16,"fields":"f32 x,y,z pc ICRS; i16 absmag*100 (32767 unknown); u16 teff K"}

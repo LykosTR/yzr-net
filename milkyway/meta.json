@@ -1,0 +1,23 @@
+{
+ "at": "2026-11-17T03:26:49Z",
+ "source": "https://www.eso.org/public/images/eso0932a/",
+ "download": "https://cdn.eso.org/images/original/eso0932a.tif",
+ "credit": "ESO/S. Brunier",
+ "license": "CC BY 4.0",
+ "projection": "equirectangular (plate carree), galactic coordinates, 2:1",
+ "l0_column": "centre column (x = width/2); b=0 on the middle row",
+ "direction": "l increases to the LEFT (u = 0.5 - l/360, l in -180..180); b increases upwards",
+ "width": 4096,
+ "height": 2048,
+ "processing": "stars removed (top-hat 7/21 px star mask, replaced by min(original, median 9/25) smoothed), per-row sky gradient subtracted (|b|<35 held constant), polar black point subtracted",
+ "black_point_removed_8bit": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "row_background_8bit_median": [
+  7.0,
+  7.0,
+  7.0
+ ]
+}
